@@ -7,6 +7,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.iskopasi.player_test.Consts.MEDIA_REQ_CODE
@@ -51,6 +53,8 @@ class PlayerXMLActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Icons.Default.PlayArrow
 
         binding = ActivityXmlPlayerBinding.inflate(layoutInflater)
         bindingDeniedPermission = ActivityDeniedPermissionBinding.inflate(layoutInflater)
@@ -165,7 +169,7 @@ class PlayerXMLActivity : AppCompatActivity() {
     private fun onGranted() {
         model.isLoading.value = false
 
-        controller.read()
+        controller.read(this)
     }
 
     private fun onDenied2() {
