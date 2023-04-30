@@ -27,8 +27,7 @@ class PlayerXMLActivity : AppCompatActivity() {
     private lateinit var binding: ActivityXmlPlayerBinding
     private lateinit var bindingDeniedPermission: ActivityDeniedPermissionBinding
     private lateinit var bindingLoader: LoaderBinding
-    private val controller = PlayerController()
-    private val model: PlayerXMLViewModel by viewModels()
+    private val model: PlayerXMLViewModel by viewModels { PlayerXMLViewModel.Factory }
 
     private val requester = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -67,6 +66,13 @@ class PlayerXMLActivity : AppCompatActivity() {
 
         setContentView(bindingLoader.root)
 
+        setObservers()
+
+//        requestPermissionOld()
+        requestPermissionContract()
+    }
+
+    private fun setObservers() {
         model.isLoading.observe(this) {
             "model.isLoading: ${model.isLoading.value}".e
             if (it) {
@@ -76,8 +82,11 @@ class PlayerXMLActivity : AppCompatActivity() {
             }
         }
 
-//        requestPermissionOld()
-        requestPermissionContract()
+        model.currentTrack.observe(this) {
+            binding.name.text = it.name
+            binding.album.text = it.album
+            binding.artist.text = it.artist
+        }
     }
 
     private fun onDenied() {
@@ -85,8 +94,6 @@ class PlayerXMLActivity : AppCompatActivity() {
     }
 
     private fun onPermaDenied() {
-        "onPermaDenied".e
-
         model.isLoading.value = false
         setContentView(bindingDeniedPermission.root)
     }
@@ -100,9 +107,6 @@ class PlayerXMLActivity : AppCompatActivity() {
             this@PlayerXMLActivity,
             Manifest.permission.READ_EXTERNAL_STORAGE
         )
-
-        "c1: $c1".e
-        "c2: $c2".e
 
         when {
             ContextCompat.checkSelfPermission(
@@ -138,7 +142,6 @@ class PlayerXMLActivity : AppCompatActivity() {
                 Manifest.permission.READ_EXTERNAL_STORAGE
             )
         ) {
-            "showing AlertDialog".e
             AlertDialog.Builder(this@PlayerXMLActivity)
                 .setTitle("We need file permission")
                 .setMessage("Plz!")
@@ -153,7 +156,6 @@ class PlayerXMLActivity : AppCompatActivity() {
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show()
         } else {
-            "showing permission request dialog".e
             requester.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
     }
@@ -169,7 +171,7 @@ class PlayerXMLActivity : AppCompatActivity() {
     private fun onGranted() {
         model.isLoading.value = false
 
-        controller.read(this)
+        model.read(this)
     }
 
     private fun onDenied2() {
