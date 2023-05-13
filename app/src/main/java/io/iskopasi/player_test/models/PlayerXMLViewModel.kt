@@ -1,26 +1,28 @@
 package io.iskopasi.player_test.models
 
-import android.content.Context
+import android.app.Application
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
+import dagger.hilt.android.lifecycle.HiltViewModel
 import io.iskopasi.player_test.MediaFile
 import io.iskopasi.player_test.Repo
+import javax.inject.Inject
 
 
-class PlayerXMLViewModel(
-    private val repo: Repo
-) : BaseViewModel(true) {
+@HiltViewModel
+class PlayerXMLViewModel @Inject constructor(
+    context: Application,
+    private val repo: Repo,
+) : BaseViewModel(
+    context = context,
+    isLoadingInitialValue = true
+) {
     val currentTrack: MutableLiveData<MediaFile> by lazy {
         MutableLiveData(MediaFile())
     }
 
-    fun read(
-        context: Context
-    ) {
+    fun read() {
         bg {
-            repo.read(context).run {
+            repo.read(getApplication()).run {
                 if (isNotEmpty()) {
                     currentTrack.postValue(first())
                 }
@@ -28,14 +30,15 @@ class PlayerXMLViewModel(
         }
     }
 
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                PlayerXMLViewModel(
-                    repo = Repo(),
-                )
-            }
-        }
-    }
+//    companion object {
+//        fun getFactory(context: Application) = viewModelFactory {
+//            initializer {
+//                PlayerXMLViewModel(
+//                    context = context,
+//                    repo = Repo(),
+//                )
+//            }
+//        }
+//    }
 
 }

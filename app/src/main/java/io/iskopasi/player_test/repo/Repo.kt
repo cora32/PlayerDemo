@@ -3,6 +3,8 @@ package io.iskopasi.player_test
 import android.content.Context
 import android.provider.MediaStore
 import io.iskopasi.player_test.Utils.e
+import javax.inject.Inject
+import javax.inject.Singleton
 
 data class MediaFile(
     val path: String = "",
@@ -15,7 +17,9 @@ data class MediaFile(
     }
 }
 
-class Repo {
+@Singleton
+class Repo @Inject constructor() {
+
     fun read(context: Context): List<MediaFile> {
         "--> Reading... ${Thread.currentThread().name}".e
 

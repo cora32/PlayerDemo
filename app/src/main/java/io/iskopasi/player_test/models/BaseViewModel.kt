@@ -1,12 +1,16 @@
 package io.iskopasi.player_test.models
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-open class BaseViewModel(isLoadingInitialValue: Boolean = false) : ViewModel() {
+open class BaseViewModel(
+    context: Application,
+    isLoadingInitialValue: Boolean
+) : AndroidViewModel(context) {
     val isLoading: MutableLiveData<Boolean> by lazy {
         MutableLiveData(isLoadingInitialValue)
     }

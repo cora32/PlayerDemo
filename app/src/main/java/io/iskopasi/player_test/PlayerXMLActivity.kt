@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import dagger.hilt.android.AndroidEntryPoint
 import io.iskopasi.player_test.Consts.MEDIA_REQ_CODE
 import io.iskopasi.player_test.Utils.e
 import io.iskopasi.player_test.databinding.ActivityDeniedPermissionBinding
@@ -23,11 +24,14 @@ object Consts {
     const val MEDIA_REQ_CODE = 0
 }
 
+@AndroidEntryPoint
 class PlayerXMLActivity : AppCompatActivity() {
     private lateinit var binding: ActivityXmlPlayerBinding
     private lateinit var bindingDeniedPermission: ActivityDeniedPermissionBinding
     private lateinit var bindingLoader: LoaderBinding
-    private val model: PlayerXMLViewModel by viewModels { PlayerXMLViewModel.Factory }
+
+    //    private val model: PlayerXMLViewModel by viewModels { PlayerXMLViewModel.getFactory(application) }
+    private val model: PlayerXMLViewModel by viewModels()
 
     private val requester = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -46,6 +50,7 @@ class PlayerXMLActivity : AppCompatActivity() {
                 this@PlayerXMLActivity,
                 Manifest.permission.READ_EXTERNAL_STORAGE
             ) -> onPermaDenied()
+
             else -> onDenied()
         }
     }
@@ -132,6 +137,7 @@ class PlayerXMLActivity : AppCompatActivity() {
                     .setIcon(android.R.drawable.ic_dialog_alert)
                     .show()
             }
+
             else -> performRequest()
         }
     }
@@ -171,7 +177,7 @@ class PlayerXMLActivity : AppCompatActivity() {
     private fun onGranted() {
         model.isLoading.value = false
 
-        model.read(this)
+        model.read()
     }
 
     private fun onDenied2() {
