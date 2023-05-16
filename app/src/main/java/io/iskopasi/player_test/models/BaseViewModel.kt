@@ -15,9 +15,7 @@ open class BaseViewModel(
         MutableLiveData(isLoadingInitialValue)
     }
 
-    fun bg(task: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            task()
-        }
+    fun bg(task: () -> Unit) = viewModelScope.launch(Dispatchers.IO) {
+        task()
     }
-}
+    }

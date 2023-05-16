@@ -2,15 +2,16 @@ package io.iskopasi.player_test
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable
+import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
 import io.iskopasi.player_test.Consts.MEDIA_REQ_CODE
 import io.iskopasi.player_test.Utils.e
@@ -58,11 +59,17 @@ class PlayerXMLActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Icons.Default.PlayArrow
-
         binding = ActivityXmlPlayerBinding.inflate(layoutInflater)
         bindingDeniedPermission = ActivityDeniedPermissionBinding.inflate(layoutInflater)
         bindingLoader = LoaderBinding.inflate(layoutInflater)
+
+        binding.next.setOnClickListener {
+            model.next()
+        }
+
+        binding.prev.setOnClickListener {
+            model.prev()
+        }
 
 //        bindingDeniedPermission.buttonRequestPermission.setOnClickListener {
 //            setContentView(binding.root)
@@ -79,7 +86,6 @@ class PlayerXMLActivity : AppCompatActivity() {
 
     private fun setObservers() {
         model.isLoading.observe(this) {
-            "model.isLoading: ${model.isLoading.value}".e
             if (it) {
                 setContentView(bindingLoader.root)
             } else {
@@ -91,6 +97,26 @@ class PlayerXMLActivity : AppCompatActivity() {
             binding.name.text = it.name
             binding.album.text = it.album
             binding.artist.text = it.artist
+        }
+
+        model.image.observe(this) {
+//            binding.iv1.setImageBitmap(it)
+
+
+            val circularProgressDrawable = CircularProgressDrawable(this).apply {
+                setColorSchemeColors(Color.WHITE)
+                strokeWidth = 5f
+                centerRadius = 30f
+                start()
+            }
+
+            Glide
+                .with(this)
+                .load(it)
+                .centerCrop()
+                .placeholder(circularProgressDrawable)
+                .error(R.drawable.album_placeholder)
+                .into(binding.iv1)
         }
     }
 
