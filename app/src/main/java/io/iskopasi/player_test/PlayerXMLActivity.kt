@@ -4,12 +4,17 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
+import android.view.GestureDetector.SimpleOnGestureListener
+import android.view.MotionEvent
+import android.widget.SeekBar
+import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.GestureDetectorCompat
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
@@ -18,6 +23,7 @@ import io.iskopasi.player_test.Utils.e
 import io.iskopasi.player_test.databinding.ActivityDeniedPermissionBinding
 import io.iskopasi.player_test.databinding.ActivityXmlPlayerBinding
 import io.iskopasi.player_test.databinding.LoaderBinding
+import io.iskopasi.player_test.models.MediaState
 import io.iskopasi.player_test.models.PlayerXMLViewModel
 
 
@@ -33,6 +39,38 @@ class PlayerXMLActivity : AppCompatActivity() {
 
     //    private val model: PlayerXMLViewModel by viewModels { PlayerXMLViewModel.getFactory(application) }
     private val model: PlayerXMLViewModel by viewModels()
+    private val circularProgressDrawable by lazy {
+        CircularProgressDrawable(this).apply {
+            setColorSchemeColors(Color.WHITE)
+            strokeWidth = 5f
+            centerRadius = 30f
+            start()
+        }
+    }
+    private val detector: GestureDetectorCompat by lazy {
+        GestureDetectorCompat(this@PlayerXMLActivity, object : SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                (e1.x - e2.x).let { dx ->
+                    when {
+                        dx < 0 -> model.prev()
+                        dx > 0 -> model.next()
+                    }
+                }
+
+                return true
+            }
+        })
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        detector.onTouchEvent(event)
+        return super.onTouchEvent(event)
+    }
 
     private val requester = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -71,6 +109,25 @@ class PlayerXMLActivity : AppCompatActivity() {
             model.prev()
         }
 
+        binding.play.setOnClickListener {
+            model.play()
+        }
+
+        binding.seekBar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+            override fun onProgressChanged(seekbar: SeekBar?, value: Int, fromUser: Boolean) {
+                if (fromUser)
+                    model.onSeek(value)
+            }
+
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+
+            }
+
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+
+            }
+        })
+
 //        bindingDeniedPermission.buttonRequestPermission.setOnClickListener {
 //            setContentView(binding.root)
 //            requestPermission2()
@@ -97,26 +154,32 @@ class PlayerXMLActivity : AppCompatActivity() {
             binding.name.text = it.name
             binding.album.text = it.album
             binding.artist.text = it.artist
+            binding.seekBar.max = it.duration.toInt()
         }
 
         model.image.observe(this) {
 //            binding.iv1.setImageBitmap(it)
 
-
-            val circularProgressDrawable = CircularProgressDrawable(this).apply {
-                setColorSchemeColors(Color.WHITE)
-                strokeWidth = 5f
-                centerRadius = 30f
-                start()
-            }
-
             Glide
                 .with(this)
                 .load(it)
-                .centerCrop()
+//                .centerCrop()
+                .dontTransform()
                 .placeholder(circularProgressDrawable)
                 .error(R.drawable.album_placeholder)
                 .into(binding.iv1)
+        }
+
+        model.mediaState.observe(this) {
+            if (it == MediaState.PLAYING) {
+                binding.play.setImageResource(R.drawable.baseline_pause_24)
+            } else {
+                binding.play.setImageResource(R.drawable.baseline_play_arrow_24)
+            }
+        }
+
+        model.position.observe(this) {
+            binding.seekBar.progress = it
         }
     }
 
@@ -157,9 +220,9 @@ class PlayerXMLActivity : AppCompatActivity() {
                     ) { dialog, which ->
                         performRequest()
                     }
-                    .setNegativeButton("Cancel", { dialog, which ->
+                    .setNegativeButton("Cancel") { dialog, which ->
                         onPermaDenied()
-                    })
+                    }
                     .setIcon(android.R.drawable.ic_dialog_alert)
                     .show()
             }

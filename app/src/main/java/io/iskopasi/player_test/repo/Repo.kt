@@ -15,15 +15,15 @@ data class MediaFile(
     val name: String? = "",
     val album: String? = "",
     val artist: String? = "",
+    val duration: Long = 0L,
 ) {
     override fun toString(): String {
-        return "$albumId $path $name $album $artist"
+        return "$albumId $path $name $album $artist $duration"
     }
 }
 
 @Singleton
 class Repo @Inject constructor() {
-
     fun getImage(path: String): Bitmap? = MediaMetadataRetriever().run {
         setDataSource(path)
 
@@ -43,6 +43,7 @@ class Repo @Inject constructor() {
                 MediaStore.Audio.AudioColumns.DISPLAY_NAME,
                 MediaStore.Audio.AudioColumns.ALBUM,
                 MediaStore.Audio.ArtistColumns.ARTIST,
+                MediaStore.Audio.Media.DURATION,
             ), null, null, null
         )?.use {
             while (it.moveToNext()) {
@@ -51,8 +52,9 @@ class Repo @Inject constructor() {
                 val name: String = it.getString(2)
                 val album: String = it.getString(3)
                 val artist: String = it.getString(4)
+                val duration: Long = it.getLong(5)
 
-                val mFile = MediaFile(albumId, path, name, album, artist)
+                val mFile = MediaFile(albumId, path, name, album, artist, duration)
 
                 files.add(mFile)
 

@@ -8,14 +8,14 @@
     <ImageView
         android:id="@+id/iv1"
         android:layout_width="match_parent"
-        android:layout_height="400dp"
-        android:maxHeight="200dp"
+        android:layout_height="300dp"
+        android:background="@color/teal_200"
         android:paddingVertical="32dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/billy"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@drawable/billy" />
 
     <TextView
         android:id="@+id/album"
@@ -62,8 +62,9 @@
             android:id="@+id/repeat"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@drawable/rounded"
+            android:background="@drawable/rounded_ripple"
             android:src="@drawable/baseline_repeat_24"
+            app:tint="@color/white"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/prev"
             app:layout_constraintHorizontal_bias="0.5"
@@ -75,21 +76,23 @@
             android:id="@+id/next"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:background="@drawable/rounded"
+            android:background="@drawable/rounded_ripple"
             android:src="@drawable/round_skip_next_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/shuffle"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toEndOf="@+id/play"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.5" />
+            app:layout_constraintVertical_bias="0.5"
+            app:tint="@color/white" />
 
         <ImageButton
             android:id="@+id/play"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:background="@drawable/rounded"
+            android:background="@drawable/rounded_ripple"
             android:src="@drawable/baseline_play_arrow_24"
+            app:tint="@color/white"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/next"
             app:layout_constraintHorizontal_bias="0.5"
@@ -101,38 +104,40 @@
             android:id="@+id/prev"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:background="@drawable/rounded"
+            android:background="@drawable/rounded_ripple"
             android:src="@drawable/round_skip_previous_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/play"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toEndOf="@+id/repeat"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.5" />
+            app:layout_constraintVertical_bias="0.5"
+            app:tint="@color/white" />
 
         <ImageButton
             android:id="@+id/shuffle"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@drawable/rounded"
+            android:background="@drawable/rounded_ripple"
             android:src="@drawable/baseline_shuffle_24"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toEndOf="@+id/next"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.5" />
+            app:layout_constraintVertical_bias="0.5"
+            app:tint="@color/white" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView
         android:id="@+id/name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:maxLines="2"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="24dp"
         android:ellipsize="marquee"
+        android:maxLines="2"
         android:textColor="@color/white"
         android:textSize="32sp"
         app:layout_constraintBottom_toBottomOf="@+id/iv1"
