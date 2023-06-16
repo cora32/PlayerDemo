@@ -1,11 +1,10 @@
-package io.iskopasi.player_test
+package io.iskopasi.player_test.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import io.iskopasi.player_test.databinding.FragmentFirstBinding
 
 /**
@@ -33,7 +32,7 @@ class FirstFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.buttonFirst.setOnClickListener {
-            findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
+//            findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
         }
     }
 
