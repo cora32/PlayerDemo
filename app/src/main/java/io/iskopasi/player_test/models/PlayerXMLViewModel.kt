@@ -63,6 +63,9 @@ class PlayerXMLViewModel @Inject constructor(
     val position: MutableLiveData<Int> by lazy {
         MutableLiveData(0)
     }
+    val list: MutableLiveData<List<MediaFile>> by lazy {
+        MutableLiveData(emptyList())
+    }
     private var iter = LoopIterator<MediaFile>()
     private lateinit var timerJob: Job
 
@@ -93,6 +96,8 @@ class PlayerXMLViewModel @Inject constructor(
                 iter = LoopIterator(repo.read(getApplication()).apply {
                     if (isNotEmpty()) {
                         setTrack(first())
+
+                        list.postValue(this)
                     }
                 })
             } catch (ex: Exception) {
@@ -135,6 +140,11 @@ class PlayerXMLViewModel @Inject constructor(
                 null -> null
             }
         }
+    }
+
+    fun play(id: Int) {
+        setTrack(iter.setIndex(id))
+        play()
     }
 
     fun stop() {

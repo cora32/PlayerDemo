@@ -11,11 +11,13 @@ import android.widget.SeekBar
 import androidx.core.view.GestureDetectorCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
 import io.iskopasi.player_test.R
 import io.iskopasi.player_test.Utils.e
+import io.iskopasi.player_test.adapters.MediaListAdapter
 import io.iskopasi.player_test.databinding.FragmentXmlBinding
 import io.iskopasi.player_test.models.MediaState
 import io.iskopasi.player_test.models.PlayerXMLViewModel
@@ -24,6 +26,7 @@ import io.iskopasi.player_test.models.PlayerXMLViewModel
 class XmlFragment : Fragment() {
     private lateinit var binding: FragmentXmlBinding
     private val model: PlayerXMLViewModel by viewModels()
+    private val adapter = MediaListAdapter(this::onItemClicked)
 
     private val circularProgressDrawable by lazy {
         CircularProgressDrawable(requireContext()).apply {
@@ -38,7 +41,7 @@ class XmlFragment : Fragment() {
         GestureDetectorCompat(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
             override fun onDown(e: MotionEvent): Boolean {
                 "${e.x}".e
-                return true
+                return false
             }
 
             override fun onFling(
@@ -54,7 +57,7 @@ class XmlFragment : Fragment() {
                     }
                 }
 
-                return true
+                return false
             }
         })
     }
@@ -72,23 +75,24 @@ class XmlFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.root.setOnTouchListener { _, motionEvent ->
-            detector.onTouchEvent(motionEvent)
-        }
+//        binding.root.setOnTouchListener { _, motionEvent ->
+//            detector.onTouchEvent(motionEvent)
+//        }
 
-        binding.next.setOnClickListener {
+        binding.content.next.setOnClickListener {
             model.next()
         }
 
-        binding.prev.setOnClickListener {
+        binding.content.prev.setOnClickListener {
             model.prev()
         }
 
-        binding.play.setOnClickListener {
+        binding.content.play.setOnClickListener {
             model.play()
         }
 
-        binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+        binding.content.seekBar.setOnSeekBarChangeListener(object :
+            SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekbar: SeekBar?, value: Int, fromUser: Boolean) {
                 if (fromUser)
                     model.onSeek(value)
@@ -103,25 +107,34 @@ class XmlFragment : Fragment() {
             }
         })
 
+        binding.recyclerView.adapter = adapter
+        binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
+
         setObservers()
 
         model.read()
     }
 
+    private fun onItemClicked(id: Int) {
+        model.play(id)
+    }
+
     private fun setObservers() {
         model.isLoading.observe(requireActivity()) {
             if (it) {
-                binding.loader.root.visibility = View.VISIBLE
+                binding.content.loader.root.visibility = View.VISIBLE
             } else {
-                binding.loader.root.visibility = View.GONE
+                binding.content.loader.root.visibility = View.GONE
             }
         }
 
         model.currentTrack.observe(requireActivity()) {
-            binding.name.text = it.name
-            binding.album.text = it.album
-            binding.artist.text = it.artist
-            binding.seekBar.max = it.duration.toInt()
+            binding.content.name.text = it.name
+            binding.content.album.text = it.album
+            binding.content.artist.text = it.artist
+            binding.content.seekBar.max = it.duration.toInt()
+
+            adapter.active = it.id
         }
 
         model.image.observe(requireActivity()) {
@@ -134,19 +147,23 @@ class XmlFragment : Fragment() {
                 .dontTransform()
                 .placeholder(circularProgressDrawable)
                 .error(R.drawable.album_placeholder)
-                .into(binding.iv1)
+                .into(binding.content.iv1)
         }
 
         model.mediaState.observe(requireActivity()) {
             if (it == MediaState.PLAYING) {
-                binding.play.setImageResource(R.drawable.baseline_pause_24)
+                binding.content.play.setImageResource(R.drawable.baseline_pause_24)
             } else {
-                binding.play.setImageResource(R.drawable.baseline_play_arrow_24)
+                binding.content.play.setImageResource(R.drawable.baseline_play_arrow_24)
             }
         }
 
         model.position.observe(requireActivity()) {
-            binding.seekBar.progress = it
+            binding.content.seekBar.progress = it
+        }
+
+        model.list.observe(requireActivity()) {
+            adapter.data = it
         }
     }
 }

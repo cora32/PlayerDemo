@@ -46,4 +46,15 @@ class LoopIterator<T>(private val data: List<T> = listOf()) {
 
         return value
     }
+
+    fun setIndex(id: Int): T? {
+        if (0 <= id && id < data.size) {
+            index = id
+            value = data[index]
+        }
+
+        "setIndex to $id (0 <= $id < ${data.size}): index=$index; val=$value".e
+
+        return value
+    }
 }

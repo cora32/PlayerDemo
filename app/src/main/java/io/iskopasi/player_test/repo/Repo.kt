@@ -10,6 +10,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 data class MediaFile(
+    val id: Int = -1,
     val albumId: Int = -1,
     val path: String = "",
     val name: String? = "",
@@ -18,7 +19,7 @@ data class MediaFile(
     val duration: Long = 0L,
 ) {
     override fun toString(): String {
-        return "$albumId $path $name $album $artist $duration"
+        return "$id $albumId $path $name $album $artist $duration"
     }
 }
 
@@ -46,6 +47,7 @@ class Repo @Inject constructor() {
                 MediaStore.Audio.Media.DURATION,
             ), null, null, null
         )?.use {
+            var id = 0
             while (it.moveToNext()) {
                 val albumId: Int = it.getInt(0)
                 val path: String = it.getString(1)
@@ -54,7 +56,7 @@ class Repo @Inject constructor() {
                 val artist: String = it.getString(4)
                 val duration: Long = it.getLong(5)
 
-                val mFile = MediaFile(albumId, path, name, album, artist, duration)
+                val mFile = MediaFile(id++, albumId, path, name, album, artist, duration)
 
                 files.add(mFile)
 

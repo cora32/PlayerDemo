@@ -52,7 +52,9 @@
 
     <fragment
         android:id="@+id/permission_denied"
-        android:name="io.iskopasi.player_test.fragments.PermissionDeniedFragment" />
+        android:name="io.iskopasi.player_test.fragments.PermissionDeniedFragment"
+        android:label="denied"
+        tools:layout="@layout/fragment_permission_denied" />
 
     <fragment android:id="@+id/placeholder" />
 

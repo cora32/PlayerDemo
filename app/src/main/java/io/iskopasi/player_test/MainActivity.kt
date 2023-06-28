@@ -16,5 +16,7 @@ class MainActivity : AppCompatActivity() {
         binding = NavActivityBinding.inflate(layoutInflater)
 
         setContentView(binding.root)
+
+//        binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
     }
 }
