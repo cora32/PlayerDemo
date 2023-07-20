@@ -18,4 +18,8 @@ open class BaseViewModel(
     fun bg(task: () -> Unit) = viewModelScope.launch(Dispatchers.IO) {
         task()
     }
+
+    fun main(task: () -> Unit) = viewModelScope.launch(Dispatchers.Main) {
+        task()
+    }
 }

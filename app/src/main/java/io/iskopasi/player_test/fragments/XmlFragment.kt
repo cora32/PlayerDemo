@@ -16,11 +16,15 @@ import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
 import io.iskopasi.player_test.R
-import io.iskopasi.player_test.Utils.e
 import io.iskopasi.player_test.adapters.MediaListAdapter
 import io.iskopasi.player_test.databinding.FragmentXmlBinding
 import io.iskopasi.player_test.models.MediaState
 import io.iskopasi.player_test.models.PlayerXMLViewModel
+import io.iskopasi.player_test.utils.Utils.e
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class XmlFragment : Fragment() {
@@ -54,6 +58,7 @@ class XmlFragment : Fragment() {
                     when {
                         dx < 0 -> model.prev()
                         dx > 0 -> model.next()
+                        else -> {}
                     }
                 }
 
@@ -80,11 +85,15 @@ class XmlFragment : Fragment() {
 //        }
 
         binding.content.next.setOnClickListener {
-            model.next()
+            model.next()?.let {
+                binding.recyclerView.scrollToPosition(it.id)
+            }
         }
 
         binding.content.prev.setOnClickListener {
-            model.prev()
+            model.prev()?.let {
+                binding.recyclerView.scrollToPosition(it.id)
+            }
         }
 
         binding.content.play.setOnClickListener {
@@ -129,12 +138,23 @@ class XmlFragment : Fragment() {
         }
 
         model.currentTrack.observe(requireActivity()) {
+            if (it.id == -1) return@observe
+
             binding.content.name.text = it.name
             binding.content.album.text = it.album
             binding.content.artist.text = it.artist
             binding.content.seekBar.max = it.duration.toInt()
 
             adapter.active = it.id
+
+            CoroutineScope(Dispatchers.Main).launch {
+                binding.content.blur.blur(binding.content.root)
+            }
+
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(2000L)
+                binding.content.blur.blur(binding.content.root)
+            }
         }
 
         model.image.observe(requireActivity()) {

@@ -4,8 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
-import io.iskopasi.player_test.Utils.e
-import io.iskopasi.player_test.Utils.toBitmap
+import io.iskopasi.player_test.utils.Utils.e
+import io.iskopasi.player_test.utils.Utils.toBitmap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -60,7 +60,7 @@ class Repo @Inject constructor() {
 
                 files.add(mFile)
 
-                "->> file: $mFile".e
+//                "->> file: $mFile".e
             }
         }
 

@@ -8,7 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.iskopasi.player_test.LoopIterator
 import io.iskopasi.player_test.MediaFile
 import io.iskopasi.player_test.Repo
-import io.iskopasi.player_test.Utils.e
+import io.iskopasi.player_test.utils.Utils.e
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,16 +36,16 @@ class PlayerXMLViewModel @Inject constructor(
     private val mediaPlayer = MediaPlayer().apply {
         setOnErrorListener { mp: MediaPlayer, what: Int, extra: Int ->
             this@PlayerXMLViewModel.reset()
-            mediaState.postValue(MediaState.IDLE)
+            mediaState.value = MediaState.IDLE
             true
         }
         setOnPreparedListener {
-            mediaState.postValue(MediaState.PREPARED)
+            mediaState.value = MediaState.PREPARED
             this@PlayerXMLViewModel.play()
         }
         setOnCompletionListener {
             this@PlayerXMLViewModel.reset()
-            mediaState.postValue(MediaState.IDLE)
+            mediaState.value = MediaState.IDLE
         }
         setOnSeekCompleteListener {
 
@@ -95,7 +95,7 @@ class PlayerXMLViewModel @Inject constructor(
             try {
                 iter = LoopIterator(repo.read(getApplication()).apply {
                     if (isNotEmpty()) {
-                        setTrack(first())
+                        main { setTrack(first()) }
 
                         list.postValue(this)
                     }
@@ -110,30 +110,33 @@ class PlayerXMLViewModel @Inject constructor(
         }
     }
 
-    private fun setTrack(track: MediaFile?) {
-        currentTrack.postValue(track)
+    private fun setTrack(track: MediaFile?): MediaFile? {
+        "---> Setting track: $track; state: ${mediaState.value}".e
+        currentTrack.value = track
         setImage(track?.path)
 
-        if (mediaState.value == MediaState.PLAYING) {
-            reset()
-            prepare()
+        val previousState = mediaState.value
+        reset()
+
+        if (previousState == MediaState.PLAYING) {
+            prepare(track)
         }
+
+        return track
     }
 
-    fun next() {
-        setTrack(iter.next())
-    }
+    fun next() = setTrack(iter.next())
 
-    fun prev() {
+    fun prev() =
         setTrack(iter.prev())
-    }
 
     fun play() {
         if (mediaPlayer.isPlaying) {
             pause()
         } else {
+            "---> Current state: ${mediaState.value}".e
             when (mediaState.value) {
-                MediaState.IDLE -> prepare()
+                MediaState.IDLE -> prepare(currentTrack.value)
                 MediaState.PAUSED, MediaState.PREPARED -> start()
                 MediaState.PLAYING -> null
                 MediaState.STOPPED -> null
@@ -150,31 +153,39 @@ class PlayerXMLViewModel @Inject constructor(
     fun stop() {
         position.postValue(0)
         mediaPlayer.stop()
-        mediaState.postValue(MediaState.STOPPED)
+        mediaState.value = MediaState.STOPPED
     }
 
     fun pause() {
         mediaPlayer.pause()
-        mediaState.postValue(MediaState.PAUSED)
-        timerJob.cancel()
+        mediaState.value = MediaState.PAUSED
+        resetTimer()
     }
 
     fun reset() {
         position.postValue(0)
         mediaPlayer.reset()
-        mediaState.postValue(MediaState.IDLE)
-        timerJob.cancel()
+        mediaState.value = MediaState.IDLE
+        resetTimer()
+    }
+
+    private fun resetTimer() {
+        when (mediaState.value) {
+            MediaState.PLAYING, MediaState.PAUSED -> timerJob.cancel()
+            else -> {}
+        }
     }
 
     fun start() {
         mediaPlayer.start()
-        mediaState.postValue(MediaState.PLAYING)
+        mediaState.value = MediaState.PLAYING
         startTimer()
     }
 
-    private fun prepare() {
-        currentTrack.value?.let { file ->
+    private fun prepare(track: MediaFile?) {
+        track?.let { file ->
             mediaPlayer.reset()
+            "--> Preparing: ${file.path}".e
             mediaPlayer.setDataSource(file.path)
             mediaPlayer.prepareAsync()
         }

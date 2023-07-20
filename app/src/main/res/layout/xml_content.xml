@@ -4,6 +4,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <io.iskopasi.player_test.views.BGView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:bg_color="@color/teal_700"
+        app:color="@color/white"
+        app:test_value="text"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.5" />
+
     <ImageView
         android:id="@+id/iv1"
         android:layout_width="match_parent"
@@ -14,7 +27,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:src="@drawable/billy" />
+        tools:src="@drawable/billy"
+        android:visibility="invisible" />
 
     <TextView
         android:id="@+id/album"
@@ -155,8 +169,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/g1" />
 
+    <io.iskopasi.player_test.views.Blur
+        android:id="@+id/blur"
+        android:layout_width="match_parent"
+        android:layout_height="500dp" />
+
     <include
         android:id="@+id/loader"
         layout="@layout/loader"
-        android:visibility="visible" />
+        android:visibility="visible"
+        tools:visibility="gone" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -26,8 +26,8 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".PlayerXMLActivity" />
-        <activity android:name=".PlayerJetpackActivity" />
+        <activity android:name=".activities.PlayerXMLActivity" />
+        <activity android:name=".activities.PlayerJetpackActivity" />
     </application>
 
 </manifest>

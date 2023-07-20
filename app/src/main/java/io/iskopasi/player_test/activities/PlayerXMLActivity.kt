@@ -1,4 +1,4 @@
-package io.iskopasi.player_test
+package io.iskopasi.player_test.activities
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -18,13 +18,14 @@ import androidx.core.view.GestureDetectorCompat
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
-import io.iskopasi.player_test.Consts.MEDIA_REQ_CODE
-import io.iskopasi.player_test.Utils.e
+import io.iskopasi.player_test.R
+import io.iskopasi.player_test.activities.Consts.MEDIA_REQ_CODE
 import io.iskopasi.player_test.databinding.ActivityDeniedPermissionBinding
 import io.iskopasi.player_test.databinding.ActivityXmlPlayerBinding
 import io.iskopasi.player_test.databinding.LoaderBinding
 import io.iskopasi.player_test.models.MediaState
 import io.iskopasi.player_test.models.PlayerXMLViewModel
+import io.iskopasi.player_test.utils.Utils.e
 
 
 object Consts {
@@ -59,6 +60,7 @@ class PlayerXMLActivity : AppCompatActivity() {
                     when {
                         dx < 0 -> model.prev()
                         dx > 0 -> model.next()
+                        else -> {}
                     }
                 }
 
