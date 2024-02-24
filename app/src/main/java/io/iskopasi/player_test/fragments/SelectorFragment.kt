@@ -1,6 +1,7 @@
 package io.iskopasi.player_test.fragments
 
 import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +18,11 @@ import io.iskopasi.player_test.databinding.FragmentSelectorBinding
 
 @AndroidEntryPoint
 class SelectorFragment : Fragment() {
+    private val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.READ_MEDIA_AUDIO
+    } else {
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    }
     private lateinit var binding: FragmentSelectorBinding
 
     private val requesterXml = registerForActivityResult(
@@ -41,7 +47,7 @@ class SelectorFragment : Fragment() {
         isGranted -> onGranted(action)
         !ActivityCompat.shouldShowRequestPermissionRationale(
             requireActivity(),
-            Manifest.permission.READ_EXTERNAL_STORAGE
+            permission
         ) -> onPermaDenied()
 
         else -> onDenied(action)
@@ -88,7 +94,7 @@ class SelectorFragment : Fragment() {
 
         if (ActivityCompat.shouldShowRequestPermissionRationale(
                 requireActivity(),
-                Manifest.permission.READ_EXTERNAL_STORAGE
+                permission
             )
         ) {
             AlertDialog.Builder(requireActivity())
@@ -97,7 +103,7 @@ class SelectorFragment : Fragment() {
                 .setPositiveButton(
                     "OK"
                 ) { dialog, which ->
-                    requester.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    requester.launch(permission)
                 }
                 .setNegativeButton("Cancel") { dialog, which ->
                     onPermaDenied()
@@ -105,7 +111,7 @@ class SelectorFragment : Fragment() {
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .show()
         } else {
-            requester.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            requester.launch(permission)
         }
     }
 }

@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
-import io.iskopasi.player_test.utils.Utils
 import io.iskopasi.player_test.utils.Utils.e
 
 class Blur @JvmOverloads constructor(
@@ -18,6 +17,23 @@ class Blur @JvmOverloads constructor(
     private var internalBitmap: Bitmap? = null
     private lateinit var internalCanvas: Canvas
 
+    init {
+        "--> init Blur width: $width; height: $height".e
+        fun listener() {
+            "--> listener Blur width: $width; height: $height".e
+            viewTreeObserver.removeOnGlobalLayoutListener(::listener)
+            blur()
+
+//            draw(internalCanvas)
+
+//            internalBitmap = Utils.blur(internalBitmap!!)
+
+//            invalidate()
+        }
+
+        viewTreeObserver.addOnGlobalLayoutListener(::listener)
+    }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
 
@@ -26,10 +42,15 @@ class Blur @JvmOverloads constructor(
 
         setMeasuredDimension(width, height)
 
-//        "--> Blur width: $width; height: $height".e
+//        "--> onMeasure Blur width: $width; height: $height".e
 
         dstRect.right = width
         dstRect.bottom = height
+    }
+
+
+    fun blur() {
+        blur(this.rootView)
     }
 
     fun blur(view: View) {
@@ -43,7 +64,7 @@ class Blur @JvmOverloads constructor(
 
             view.draw(internalCanvas)
 
-            internalBitmap = Utils.blur(internalBitmap!!)
+//            internalBitmap = Utils.blur(internalBitmap!!)
 
             invalidate()
         }

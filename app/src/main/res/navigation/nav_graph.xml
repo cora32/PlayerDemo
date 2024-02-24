@@ -31,9 +31,9 @@
 
     <fragment
         android:id="@+id/XmlFragment"
-        android:name="io.iskopasi.player_test.fragments.XmlFragment"
+        android:name="io.iskopasi.player_test.fragments.XmlFragment2"
         android:label="@string/first_fragment_label"
-        tools:layout="@layout/fragment_xml">
+        tools:layout="@layout/fragment_xml2">
 
         <!--        <action-->
         <!--            android:id="@+id/action_FirstFragment_to_SecondFragment"-->

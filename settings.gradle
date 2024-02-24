@@ -14,4 +14,3 @@ dependencyResolutionManagement {
 }
 rootProject.name = "player_test"
 include ':app'
-include ':renderscript-toolkit'

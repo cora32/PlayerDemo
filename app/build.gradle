@@ -59,7 +59,6 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs).configureEac
 
 dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation project(path: ':renderscript-toolkit')
     def lifecycle_version = '2.6.1'
 
     // ViewModel
