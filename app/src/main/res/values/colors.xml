@@ -9,6 +9,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="c1">#77888888</color>
     <color name="trans">#00FFFFFF</color>
+    <color name="trans_red">#61FF0000</color>
     <color name="bg1">#714423</color>
     <color name="yellow">#FFCF29</color>
 </resources>

@@ -5,9 +5,29 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.util.Log
 import android.view.View
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+
+
+//private val Context.getStatusBarHeight: Int
+//    get() {
+//        val styledAttributes: TypedArray = theme.obtainStyledAttributes(
+//            intArrayOf(R.attr.actionBarSize)
+//        )
+//        val actionBarHeight = styledAttributes.getDimension(0, 0f).toInt()
+//        styledAttributes.recycle()
+//
+//        return actionBarHeight
+//    }
+
+private val View.getStatusBarHeight: Int
+    get() {
+        return ViewCompat.getRootWindowInsets(this)!!
+            .getInsets(WindowInsetsCompat.Type.statusBars()).top
+    }
 
 object Utils {
 //    fun blur(bitmap: Bitmap): Bitmap {
@@ -30,16 +50,28 @@ object Utils {
         task()
     }
 
-    fun getSectorBitmap(
+    fun crop(
         view: View,
         x: Float, y: Float,
         width: Int, height: Int
     ): Bitmap {
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap!!)
+        val statusBarHeight = view.getStatusBarHeight
 
+        val bitmapSource = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmapSource!!)
         view.draw(canvas)
 
-        return bitmap
+        return Bitmap.createBitmap(
+            bitmapSource,
+            x.toInt(), y.toInt() + statusBarHeight,
+            width,
+            height
+        )
     }
+
+//    fun getStatusBarHeight(): Int {
+//        val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+//        return if (resourceId > 0) resources.getDimensionPixelSize(resourceId)
+//        else Rect().apply { window.decorView.getWindowVisibleDisplayFrame(this) }.top
+//    }
 }
