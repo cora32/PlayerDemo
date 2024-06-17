@@ -1,12 +1,15 @@
 package io.iskopasi.player_test.utils
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.util.Log
 import android.view.View
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.palette.graphics.Palette
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -63,7 +66,7 @@ object Utils {
         val statusBarHeight = view.getStatusBarHeight
 
         val bitmapSource = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmapSource!!)
+        val canvas = Canvas(bitmapSource)
         view.draw(canvas)
 
         return Bitmap.createBitmap(
@@ -79,4 +82,24 @@ object Utils {
 //        return if (resourceId > 0) resources.getDimensionPixelSize(resourceId)
 //        else Rect().apply { window.decorView.getWindowVisibleDisplayFrame(this) }.top
 //    }
+}
+
+
+fun Int.getAccent(context: Context, block: (Int?) -> Unit) {
+    val bt = BitmapFactory.decodeResource(
+        context.resources,
+        this
+    )
+
+    Palette.from(bt).generate { palette ->
+        block(
+            palette!!.getVibrantColor(
+                ResourcesCompat.getColor(
+                    context.resources,
+                    io.iskopasi.player_test.R.color.silver, null
+                )
+            )
+        )
+
+    }
 }

@@ -10,13 +10,12 @@
         android:layout_height="50dp"
         android:background="@drawable/rounded_ripple"
         android:src="@drawable/baseline_repeat_24"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/b3"
         app:layout_constraintEnd_toStartOf="@+id/b2"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintHorizontal_chainStyle="spread"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.5"
+        app:layout_constraintTop_toTopOf="@+id/b3"
         app:tint="@color/white" />
 
     <ImageButton
@@ -24,27 +23,25 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:background="@drawable/rounded_ripple"
-        android:src="@drawable/baseline_repeat_24"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@drawable/baseline_skip_previous_24"
+        app:layout_constraintBottom_toBottomOf="@+id/b3"
         app:layout_constraintEnd_toStartOf="@+id/b3"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/b1"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.5"
+        app:layout_constraintTop_toTopOf="@+id/b3"
         app:tint="@color/white" />
 
     <ImageButton
         android:id="@+id/b3"
         android:layout_width="70dp"
         android:layout_height="70dp"
+        android:layout_marginTop="16dp"
         android:background="@drawable/rounded_ripple"
         android:src="@drawable/baseline_play_arrow_24"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/b4"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/b2"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.5"
+        app:layout_constraintTop_toBottomOf="@+id/seekBar"
         app:tint="@color/white" />
 
     <ImageButton
@@ -52,13 +49,12 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:background="@drawable/rounded_ripple"
-        android:src="@drawable/baseline_repeat_24"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@drawable/baseline_skip_next_24"
+        app:layout_constraintBottom_toBottomOf="@+id/b3"
         app:layout_constraintEnd_toStartOf="@+id/b5"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/b3"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.5"
+        app:layout_constraintTop_toTopOf="@+id/b3"
         app:tint="@color/white" />
 
     <ImageButton
@@ -66,13 +62,27 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:background="@drawable/rounded_ripple"
-        android:src="@drawable/baseline_repeat_24"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:src="@drawable/baseline_shuffle_24"
+        app:layout_constraintBottom_toBottomOf="@+id/b3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/b4"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.5"
+        app:layout_constraintTop_toTopOf="@+id/b3"
         app:tint="@color/white" />
 
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:paddingStart="24dp"
+        android:paddingTop="24dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
