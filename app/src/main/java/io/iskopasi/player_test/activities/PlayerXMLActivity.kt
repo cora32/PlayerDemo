@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
-import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
@@ -14,7 +13,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.GestureDetectorCompat
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.Glide
 import dagger.hilt.android.AndroidEntryPoint
@@ -48,29 +46,29 @@ class PlayerXMLActivity : AppCompatActivity() {
             start()
         }
     }
-    private val detector: GestureDetectorCompat by lazy {
-        GestureDetectorCompat(this@PlayerXMLActivity, object : SimpleOnGestureListener() {
-            override fun onFling(
-                e1: MotionEvent,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                (e1.x - e2.x).let { dx ->
-                    when {
-                        dx < 0 -> model.prev()
-                        dx > 0 -> model.next()
-                        else -> {}
-                    }
-                }
-
-                return true
-            }
-        })
-    }
+//    private val detector: GestureDetectorCompat by lazy {
+//        GestureDetectorCompat(this@PlayerXMLActivity, object : SimpleOnGestureListener() {
+//            override fun onFling(
+//                e1: MotionEvent,
+//                e2: MotionEvent,
+//                velocityX: Float,
+//                velocityY: Float
+//            ): Boolean {
+//                (e1.x - e2.x).let { dx ->
+//                    when {
+//                        dx < 0 -> model.prev()
+//                        dx > 0 -> model.next()
+//                        else -> {}
+//                    }
+//                }
+//
+//                return true
+//            }
+//        })
+//    }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        detector.onTouchEvent(event)
+//        detector.onTouchEvent(event)
         return super.onTouchEvent(event)
     }
 

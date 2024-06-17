@@ -11,5 +11,6 @@
     <color name="trans">#00FFFFFF</color>
     <color name="trans_red">#61FF0000</color>
     <color name="bg1">#714423</color>
+    <color name="bg2">#CDEDEDED</color>
     <color name="yellow">#FFCF29</color>
 </resources>

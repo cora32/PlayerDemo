@@ -103,7 +103,7 @@ class BGView @JvmOverloads constructor(
         centerY = height / 2f
     }
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
         canvas?.drawColor(bgColor)

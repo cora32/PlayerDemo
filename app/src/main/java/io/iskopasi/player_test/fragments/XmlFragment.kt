@@ -2,13 +2,10 @@ package io.iskopasi.player_test.fragments
 
 import android.graphics.Color
 import android.os.Bundle
-import android.view.GestureDetector
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
-import androidx.core.view.GestureDetectorCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -20,7 +17,6 @@ import io.iskopasi.player_test.adapters.MediaListAdapter
 import io.iskopasi.player_test.databinding.FragmentXmlBinding
 import io.iskopasi.player_test.models.MediaState
 import io.iskopasi.player_test.models.PlayerXMLViewModel
-import io.iskopasi.player_test.utils.Utils.e
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -41,31 +37,31 @@ class XmlFragment : Fragment() {
         }
     }
 
-    private val detector: GestureDetectorCompat by lazy {
-        GestureDetectorCompat(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
-            override fun onDown(e: MotionEvent): Boolean {
-                "${e.x}".e
-                return false
-            }
-
-            override fun onFling(
-                e1: MotionEvent,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                (e1.x - e2.x).let { dx ->
-                    when {
-                        dx < 0 -> model.prev()
-                        dx > 0 -> model.next()
-                        else -> {}
-                    }
-                }
-
-                return false
-            }
-        })
-    }
+//    private val detector: GestureDetectorCompat by lazy {
+//        GestureDetectorCompat(requireContext(), object : GestureDetector.SimpleOnGestureListener() {
+//            override fun onDown(e: MotionEvent): Boolean {
+//                "${e.x}".e
+//                return false
+//            }
+//
+//            override fun onFling(
+//                e1: MotionEvent,
+//                e2: MotionEvent,
+//                velocityX: Float,
+//                velocityY: Float
+//            ): Boolean {
+//                (e1.x - e2.x).let { dx ->
+//                    when {
+//                        dx < 0 -> model.prev()
+//                        dx > 0 -> model.next()
+//                        else -> {}
+//                    }
+//                }
+//
+//                return false
+//            }
+//        })
+//    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

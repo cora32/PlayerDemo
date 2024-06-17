@@ -2,6 +2,7 @@ package io.iskopasi.player_test.views
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BlendMode
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.RenderEffect
@@ -166,46 +167,51 @@ class Blur @JvmOverloads constructor(
     )
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    val FROSTED_GLASS_SHADER = RuntimeShader(
+    val BLUR_SHADER = RuntimeShader(
         """
     uniform shader inputShader;
     uniform float height;
     uniform float width;
-            
-    vec4 main(vec2 coords) {
-        vec4 currValue = inputShader.eval(coords);
+    uniform float2 iResolution;
+    
+    const vec3 offset = vec3(-1, 0, 1);
+    const mat3 box_blur = mat3(1, 1, 1, 1, 1, 1, 1, 1, 1) * 0.1111;
+    const mat3 gaussian_blur = mat3(1, 2, 1, 2, 4, 2, 1, 2, 1) * 0.0625;
+    const mat3 sharpen = mat3(0, -1, 0, -1, 5, -1, 0, -1, 0);
+    
+    vec4 main(vec2 coords) { 
+    // Normalized pixel coordinates (from 0 to 1)
+//        vec2 uv = coords / iResolution.xy;
+        vec4 currValue = vec4(0);
         
-        float top = 0;
-        if (coords.y < top) {
-            return currValue;
-        } else {
-            float radius = 16;
-            
-            if (coords.x > 1 && coords.y > 1 &&
-                    coords.x < (width - 1) &&
-                    coords.y < (height - 1)) {
-                    
-                vec4 boxSum =
-                    inputShader.eval(coords + vec2(-radius, -radius)) + 
-                    // ...
-                    currValue +
-                    // ...
-                    inputShader.eval(coords + vec2(radius, radius));
-                currValue = boxSum / 8;
-            }
-            
-//            const vec4 white = vec4(1);            // top-left corner of label area
-//            vec2 lefttop = vec2(0, 0);
-//            float lightenFactor = min(1.0, .6 *
-//                    length(coords - lefttop) /
-//                    (0.85 * length(vec2(width, 100))));
-            // White in upper-left, blended increasingly
-            // toward lower-right
-//            return mix(currValue, white, 1 - lightenFactor);
-            return currValue;
+//const int radius = 3;
+//
+//    for(int x = 0; x < radius; x++) {
+//        for(int y = 0; y < radius; y++) {
+//    //            vec2 offset = vec2(x, y) / iResolution.xy;
+////                currValue += (inputShader.eval(coords + vec2(offset[x], offset[y])) * box_blur[x][y]);
+////                currValue += (inputShader.eval(vec2(coords.x + offset[x], coords.y + offset[y])) * box_blur[x][y]);
+//                currValue += (inputShader.eval(vec2(coords.x + offset[x], coords.y + offset[y])) * gaussian_blur[x][y]);
+//        }
+//    }
+//        currValue /= 9.0;
+
+    const int radius = 50;
+    const int rStart = int(-radius / 2);
+
+    for(int x = 0; x < radius; x++) {
+        float xOffset = float(rStart + x);
+
+        for(int y = 0; y < radius; y++) {
+            float yOffset = float(rStart + y);         
+            currValue += (inputShader.eval(vec2(coords.x + xOffset, coords.y + yOffset)));
         }
     }
-"""
+        currValue /= float(radius * radius);
+        
+        return currValue;
+    }
+""".trimIndent()
     )
 
     init {
@@ -246,19 +252,31 @@ class Blur @JvmOverloads constructor(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
 //            FROSTED_GLASS_SHADER.setFloatUniform("height", height.toFloat())
 //            FROSTED_GLASS_SHADER.setFloatUniform("width", width.toFloat())
+            BLUR_SHADER.setFloatUniform("iResolution", width.toFloat(), height.toFloat())
 
-//            val effect = RenderEffect.createRuntimeShaderEffect(FROSTED_GLASS_SHADER, "inputShader")
-            val effect = RenderEffect.createRuntimeShaderEffect(TEST_SHADER, "inputShader")
+            val effect1 = RenderEffect.createRuntimeShaderEffect(BLUR_SHADER, "inputShader")
+            val effect2 = RenderEffect.createRuntimeShaderEffect(BLUR_SHADER, "inputShader")
+            val effect3 = RenderEffect.createRuntimeShaderEffect(GREYSCALE_SHADER, "inputShader")
+//            val effect = RenderEffect.createRuntimeShaderEffect(TEST_SHADER, "inputShader")
 
 //            val effect = RenderEffect.createRuntimeShaderEffect(GREYSCALE_SHADER, "inputShader")
 //            val effect = RenderEffect.createRuntimeShaderEffect(PERLIN_NOISE, "inputShader")
-            this.setRenderEffect(effect)
+            val blend = RenderEffect.createBlendModeEffect(
+                effect1,
+                effect2,
+                BlendMode.HARD_LIGHT
+            )
+
+            this.setRenderEffect(blend)
+//            this.setRenderEffect(
+//                RenderEffect.createBlurEffect(30f, 30f, Shader.TileMode.MIRROR)
+//            )
         } else {
             TODO("VERSION.SDK_INT < TIRAMISU")
         }
     }
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
         internalBitmap?.apply {
