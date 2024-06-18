@@ -9,12 +9,15 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:background="@drawable/rounded_ripple"
-        android:src="@drawable/baseline_repeat_24"
+        android:src="@drawable/round_repeat_24"
         app:layout_constraintBottom_toBottomOf="@+id/b3"
         app:layout_constraintEnd_toStartOf="@+id/b2"
+        android:padding="14dp"
+        android:scaleType="fitXY"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintHorizontal_chainStyle="spread"
         app:layout_constraintStart_toStartOf="parent"
+        android:alpha="0.7"
         app:layout_constraintTop_toTopOf="@+id/b3"
         app:tint="@color/white" />
 
@@ -22,13 +25,16 @@
         android:id="@+id/b2"
         android:layout_width="50dp"
         android:layout_height="50dp"
+        android:padding="4dp"
+        android:scaleType="fitXY"
         android:background="@drawable/rounded_ripple"
-        android:src="@drawable/baseline_skip_previous_24"
+        android:src="@drawable/round_skip_previous_24"
         app:layout_constraintBottom_toBottomOf="@+id/b3"
         app:layout_constraintEnd_toStartOf="@+id/b3"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/b1"
         app:layout_constraintTop_toTopOf="@+id/b3"
+        android:alpha="0.7"
         app:tint="@color/white" />
 
     <ImageButton
@@ -37,23 +43,28 @@
         android:layout_height="70dp"
         android:layout_marginTop="16dp"
         android:background="@drawable/rounded_ripple"
-        android:src="@drawable/baseline_play_arrow_24"
+        android:src="@drawable/round_play_arrow_24"
+        android:scaleType="fitXY"
         app:layout_constraintEnd_toStartOf="@+id/b4"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/b2"
         app:layout_constraintTop_toBottomOf="@+id/seekBar"
+        android:alpha="0.8"
         app:tint="@color/white" />
 
     <ImageButton
         android:id="@+id/b4"
+        android:scaleType="fitXY"
+        android:padding="4dp"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:background="@drawable/rounded_ripple"
-        android:src="@drawable/baseline_skip_next_24"
+        android:src="@drawable/round_skip_next_24"
         app:layout_constraintBottom_toBottomOf="@+id/b3"
         app:layout_constraintEnd_toStartOf="@+id/b5"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/b3"
+        android:alpha="0.7"
         app:layout_constraintTop_toTopOf="@+id/b3"
         app:tint="@color/white" />
 
@@ -61,16 +72,19 @@
         android:id="@+id/b5"
         android:layout_width="50dp"
         android:layout_height="50dp"
+        android:scaleType="fitXY"
         android:background="@drawable/rounded_ripple"
-        android:src="@drawable/baseline_shuffle_24"
+        android:src="@drawable/round_shuffle_24"
         app:layout_constraintBottom_toBottomOf="@+id/b3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/b4"
         app:layout_constraintTop_toTopOf="@+id/b3"
+        android:alpha="0.7"
+        android:padding="14dp"
         app:tint="@color/white" />
 
-    <SeekBar
+    <io.iskopasi.player_test.views.AnimatedSeekBarView
         android:id="@+id/seekBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -81,8 +95,43 @@
         android:paddingTop="24dp"
         android:paddingEnd="24dp"
         android:paddingBottom="24dp"
+        android:theme="@style/Widget.AppCompat.SeekBar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/timer_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/arima_madurai_thin"
+        android:gravity="start"
+        android:maxLines="1"
+        android:text="00:00"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="@+id/seekBar"
+        app:layout_constraintEnd_toEndOf="@+id/seekBar"
+        app:layout_constraintHorizontal_bias="0.07"
+        app:layout_constraintStart_toStartOf="@+id/seekBar"
+        app:layout_constraintTop_toTopOf="@+id/seekBar"
+        app:layout_constraintVertical_bias="1.0" />
+
+    <TextView
+        android:id="@+id/timer_end"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/arima_madurai_thin"
+        android:gravity="end"
+        android:maxLines="1"
+        android:text="00:00:00"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="@+id/seekBar"
+        app:layout_constraintEnd_toEndOf="@+id/seekBar"
+        app:layout_constraintHorizontal_bias="0.92"
+        app:layout_constraintStart_toStartOf="@+id/seekBar"
+        app:layout_constraintTop_toTopOf="@+id/seekBar"
+        app:layout_constraintVertical_bias="1.0" />
 </androidx.constraintlayout.widget.ConstraintLayout>

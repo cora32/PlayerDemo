@@ -16,4 +16,5 @@
     <color name="silver">#D4D4D4</color>
     <color name="gradient_start">#ABB1B1B1</color>
     <color name="gradient_end">#393636</color>
+    <color name="text_color_1">#CDEDEDED</color>
 </resources>

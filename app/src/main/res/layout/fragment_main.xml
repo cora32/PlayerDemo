@@ -14,22 +14,22 @@
 
     <io.iskopasi.player_test.views.AnimatedBorderFrameView
         android:id="@+id/image_f"
-        android:layout_width="300dp"
-        android:layout_height="300dp"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
         android:background="@drawable/round_2"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.32">
+        app:layout_constraintVertical_bias="0.22000003">
 
         <ImageView
             android:id="@+id/image"
-            android:layout_width="290dp"
-            android:layout_height="290dp"
+            android:layout_width="240dp"
+            android:layout_height="240dp"
+            android:layout_gravity="center"
             android:cropToPadding="false"
             android:scaleType="centerCrop"
-            android:layout_gravity="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -47,8 +47,7 @@
         android:fontFamily="@font/arima_madurai_thin"
         android:gravity="center_horizontal"
         android:maxLines="1"
-        android:text="test test!!"
-        android:textColor="@color/bg2"
+        android:textColor="@color/text_color_1"
         android:textSize="42sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -64,7 +63,7 @@
         android:fontFamily="@font/arima_madurai_thin"
         android:gravity="center_horizontal"
         android:maxLines="2"
-        android:textColor="@color/bg2"
+        android:textColor="@color/text_color_1"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -79,6 +78,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/image_f"
-        app:layout_constraintVertical_bias="0.6" />
+        app:layout_constraintVertical_bias="0.52" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

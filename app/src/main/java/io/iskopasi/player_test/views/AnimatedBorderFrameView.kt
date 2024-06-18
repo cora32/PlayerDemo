@@ -19,7 +19,7 @@ class AnimatedBorderFrameView @JvmOverloads constructor(
     private var oldColor: Int =
         ResourcesCompat.getColor(context.resources, R.color.silver, null)
     private val width =
-        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5f, resources.displayMetrics)
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 3f, resources.displayMetrics)
             .toInt()
 
     fun setBorderColor(newColor: Int) {

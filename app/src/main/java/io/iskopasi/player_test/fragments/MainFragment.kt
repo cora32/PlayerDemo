@@ -1,13 +1,13 @@
 package io.iskopasi.player_test.fragments
 
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
+import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
@@ -50,17 +50,27 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        binding.controls.seekBar.setColor(
+            ResourcesCompat.getColor(
+                resources,
+                R.color.text_color_1,
+                null
+            )
+        )
         model.currentData.observe(requireActivity()) {
             loadData(it)
         }
 
-        model.currentSeekPosition.observe(requireActivity()) {
+        model.currentProgress.observe(requireActivity()) {
             binding.controls.seekBar.progress = it
+            binding.controls.timerStart.text = DateUtils.formatElapsedTime(it.toLong())
         }
 
         binding.controls.seekBar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                model.setSeekPosition(progress)
+                if (fromUser) {
+                    model.setSeekPosition(progress)
+                }
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -103,21 +113,14 @@ class MainFragment : Fragment() {
 
         binding.tv.text = data.name
         binding.tv2.text = data.subtitle
+        binding.controls.seekBar.max = data.duration
+        binding.controls.timerEnd.text = DateUtils.formatElapsedTime(data.duration.toLong())
 
         data.image.getAccent(requireContext().applicationContext) {
             it?.let {
                 binding.imageF.setBorderColor(it)
                 binding.bgInclude.gradientFrame.setColor(it)
-                binding.controls.seekBar.progressDrawable.apply {
-                    mutate()
-
-                    colorFilter = PorterDuffColorFilter(it, PorterDuff.Mode.SRC_IN)
-                }
-                binding.controls.seekBar.thumb.apply {
-                    mutate()
-
-                    colorFilter = PorterDuffColorFilter(it, PorterDuff.Mode.SRC_ATOP)
-                }
+//                binding.controls.seekBar.setColor(it)
             }
         }
     }
