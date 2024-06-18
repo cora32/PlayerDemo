@@ -27,13 +27,23 @@ class PlayerModel(context: Application) : AndroidViewModel(context) {
         MediaData(R.drawable.i10, "Anger and Wraith", "Not even mad", 9380468),
     )
     var currentData = MutableLiveData(test.first())
+    var isPlaying = MutableLiveData(false)
     var currentProgress = MutableLiveData(0)
 
     fun shuffle() {
         currentData.value = test[(0..10).random()]
+        currentProgress.value = (0..currentData.value!!.duration).random()
     }
 
     fun setSeekPosition(progress: Int) {
         currentProgress.value = progress
+    }
+
+    fun start() {
+        isPlaying.value = true
+    }
+
+    fun pause() {
+        isPlaying.value = false
     }
 }

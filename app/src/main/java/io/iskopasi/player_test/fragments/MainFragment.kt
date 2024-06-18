@@ -1,5 +1,6 @@
 package io.iskopasi.player_test.fragments
 
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.LayoutInflater
@@ -79,6 +80,20 @@ class MainFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
             }
         })
+
+        binding.controls.b3.setOnClickListener {
+            if (model.isPlaying.value!!) {
+                model.pause()
+
+                binding.controls.b3.setImageResource(R.drawable.pause_start_avd)
+            } else {
+                model.start()
+
+                binding.controls.b3.setImageResource(R.drawable.start_pause_avd)
+            }
+
+            (binding.controls.b3.drawable as AnimatedVectorDrawable).start()
+        }
 
 
         ui {
