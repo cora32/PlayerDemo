@@ -20,10 +20,8 @@ import io.iskopasi.player_test.R
 import io.iskopasi.player_test.databinding.FragmentMainBinding
 import io.iskopasi.player_test.models.MediaData
 import io.iskopasi.player_test.models.PlayerModel
-import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.utils.getAccent
 import jp.wasabeef.glide.transformations.BlurTransformation
-import kotlinx.coroutines.delay
 
 
 class MainFragment : Fragment() {
@@ -108,8 +106,16 @@ class MainFragment : Fragment() {
             (binding.controls.b1.drawable as AnimatedVectorDrawable).start()
         }
 
+        model.isFavorite.observe(requireActivity()) {
+            setFavoriteResource(model.currentData.value!!.isFavorite)
+        }
+
         binding.controls.b1.setOnClickListener {
             model.repeat()
+        }
+
+        binding.controls.b2.setOnClickListener {
+            model.prev()
         }
 
         binding.controls.b3.setOnClickListener {
@@ -120,42 +126,54 @@ class MainFragment : Fragment() {
             }
         }
 
+        binding.controls.b4.setOnClickListener {
+            model.next()
+        }
+
         binding.controls.b5.setOnClickListener {
             model.shuffle()
         }
 
-
-        ui {
-            delay(1000L)
-
-            while (true) {
-                model.next()
-                delay(2500L)
-            }
+        binding.btnLike.setOnClickListener {
+            model.favorite()
         }
+
+        binding.btnShare.setOnClickListener {
+            model.share(requireContext().applicationContext)
+        }
+
+//        ui {
+//            delay(1000L)
+//
+//            while (true) {
+//                model.next()
+//                delay(2500L)
+//            }
+//        }
     }
 
     private fun loadData(data: MediaData) {
+        Glide.with(requireContext().applicationContext).clear(binding.image)
+        Glide.with(requireContext().applicationContext).clear(binding.bgInclude.imageBg)
+
         Glide
-            .with(this)
+            .with(requireContext().applicationContext)
             .load(data.image)
-//            .centerCrop()
-//            .circleCrop()
 //            .placeholder(spinner)
             .transition(DrawableTransitionOptions.withCrossFade())
             .circleCrop()
-            .apply(RequestOptions().override(240, 240))
             .diskCacheStrategy(DiskCacheStrategy.NONE)
             .error(R.drawable.none)
             .into(binding.image)
 
         Glide
-            .with(this)
+            .with(requireContext().applicationContext)
             .load(data.image)
             .centerCrop()
 //            .placeholder(spinner)
             .transition(DrawableTransitionOptions.withCrossFade())
             .downsample(DownsampleStrategy.CENTER_INSIDE)
+            .error(R.drawable.none)
             .apply(RequestOptions.bitmapTransform(BlurTransformation(25, 3)))
             .into(binding.bgInclude.imageBg)
 
@@ -169,6 +187,28 @@ class MainFragment : Fragment() {
                 binding.imageF.setBorderColor(it)
                 binding.bgInclude.gradientFrame.setColor(it)
 //                binding.controls.seekBar.setColor(it)
+            }
+        }
+
+        setFavoriteResource(data.isFavorite)
+    }
+
+    private fun setFavoriteResource(isFavorite: Boolean) {
+        if (isFavorite) {
+            if (R.drawable.favb_fav_avd != binding.btnLike.tag) {
+                binding.btnLike.apply {
+                    tag = R.drawable.favb_fav_avd
+                    setImageResource(R.drawable.favb_fav_avd)
+                    (drawable as AnimatedVectorDrawable).start()
+                }
+            }
+        } else {
+            if (R.drawable.fav_favb_avd != binding.btnLike.tag) {
+                binding.btnLike.apply {
+                    tag = R.drawable.fav_favb_avd
+                    setImageResource(R.drawable.fav_favb_avd)
+                    (drawable as AnimatedVectorDrawable).start()
+                }
             }
         }
     }

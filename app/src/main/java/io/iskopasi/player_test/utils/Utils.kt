@@ -1,19 +1,25 @@
 package io.iskopasi.player_test.utils
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.util.Log
 import android.view.View
+import android.webkit.MimeTypeMap
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.palette.graphics.Palette
+import io.iskopasi.player_test.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.io.File
 
 
 //private val Context.getStatusBarHeight: Int
@@ -102,4 +108,21 @@ fun Int.getAccent(context: Context, block: (Int?) -> Unit) {
         )
 
     }
+}
+
+fun File.share(context: Context, subject: String, text: String) {
+    val uri = FileProvider.getUriForFile(
+        context, BuildConfig.APPLICATION_ID + ".provider", this
+    )
+    ContextCompat.startActivity(context.applicationContext, Intent(Intent.ACTION_SEND).apply {
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        setType(
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension(this@share.extension)
+        )
+        putExtra(Intent.EXTRA_STREAM, uri)
+
+        putExtra(Intent.EXTRA_SUBJECT, subject)
+        putExtra(Intent.EXTRA_TEXT, text)
+        setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }, null)
 }
