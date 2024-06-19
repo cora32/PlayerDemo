@@ -8,11 +8,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
-import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestOptions
@@ -51,13 +51,13 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.controls.seekBar.setColor(
-            ResourcesCompat.getColor(
-                resources,
-                R.color.text_color_1,
-                null
-            )
-        )
+//        binding.controls.seekBar.setColor(
+//            ResourcesCompat.getColor(
+//                resources,
+//                R.color.text_color_1,
+//                null
+//            )
+//        )
         model.currentData.observe(requireActivity()) {
             loadData(it)
         }
@@ -81,18 +81,47 @@ class MainFragment : Fragment() {
             }
         })
 
+        model.isPlaying.observe(requireActivity()) {
+            if (it!!) {
+                binding.controls.b3.setImageResource(R.drawable.start_pause_avd)
+            } else {
+                binding.controls.b3.setImageResource(R.drawable.pause_start_avd)
+            }
+            (binding.controls.b3.drawable as AnimatedVectorDrawable).start()
+        }
+
+        model.isShuffling.observe(requireActivity()) {
+            if (it!!) {
+                binding.controls.b5.setImageResource(R.drawable.shuffleoff_shuffleon_avd)
+            } else {
+                binding.controls.b5.setImageResource(R.drawable.shuffleon_shuffleoff_avd)
+            }
+            (binding.controls.b5.drawable as AnimatedVectorDrawable).start()
+        }
+
+        model.isRepeating.observe(requireActivity()) {
+            if (it!!) {
+                binding.controls.b1.setImageResource(R.drawable.roff_ron_avd)
+            } else {
+                binding.controls.b1.setImageResource(R.drawable.ron_roff_avd)
+            }
+            (binding.controls.b1.drawable as AnimatedVectorDrawable).start()
+        }
+
+        binding.controls.b1.setOnClickListener {
+            model.repeat()
+        }
+
         binding.controls.b3.setOnClickListener {
             if (model.isPlaying.value!!) {
                 model.pause()
-
-                binding.controls.b3.setImageResource(R.drawable.pause_start_avd)
             } else {
                 model.start()
-
-                binding.controls.b3.setImageResource(R.drawable.start_pause_avd)
             }
+        }
 
-            (binding.controls.b3.drawable as AnimatedVectorDrawable).start()
+        binding.controls.b5.setOnClickListener {
+            model.shuffle()
         }
 
 
@@ -100,7 +129,7 @@ class MainFragment : Fragment() {
             delay(1000L)
 
             while (true) {
-                model.shuffle()
+                model.next()
                 delay(2500L)
             }
         }
@@ -110,17 +139,21 @@ class MainFragment : Fragment() {
         Glide
             .with(this)
             .load(data.image)
-            .centerCrop()
-            .circleCrop()
-            .placeholder(spinner)
+//            .centerCrop()
+//            .circleCrop()
+//            .placeholder(spinner)
             .transition(DrawableTransitionOptions.withCrossFade())
+            .circleCrop()
+            .apply(RequestOptions().override(240, 240))
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .error(R.drawable.none)
             .into(binding.image)
 
         Glide
             .with(this)
             .load(data.image)
             .centerCrop()
-            .placeholder(spinner)
+//            .placeholder(spinner)
             .transition(DrawableTransitionOptions.withCrossFade())
             .downsample(DownsampleStrategy.CENTER_INSIDE)
             .apply(RequestOptions.bitmapTransform(BlurTransformation(25, 3)))

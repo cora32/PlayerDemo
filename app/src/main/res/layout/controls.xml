@@ -2,7 +2,8 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <ImageButton
         android:id="@+id/b1"
@@ -17,7 +18,7 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintHorizontal_chainStyle="spread"
         app:layout_constraintStart_toStartOf="parent"
-        android:alpha="0.7"
+        android:alpha="0.6"
         app:layout_constraintTop_toTopOf="@+id/b3"
         app:tint="@color/white" />
 
@@ -49,7 +50,7 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/b2"
         app:layout_constraintTop_toBottomOf="@+id/seekBar"
-        android:alpha="0.8"
+        android:alpha="0.75"
         app:tint="@color/white" />
 
     <ImageButton
@@ -80,7 +81,7 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/b4"
         app:layout_constraintTop_toTopOf="@+id/b3"
-        android:alpha="0.7"
+        android:alpha="0.6"
         android:padding="14dp"
         app:tint="@color/white" />
 
@@ -96,6 +97,9 @@
         android:paddingEnd="24dp"
         android:paddingBottom="24dp"
         android:theme="@style/Widget.AppCompat.SeekBar"
+        android:background="@null"
+        android:progressTint="@color/text_color_1"
+        android:thumb="@null"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
@@ -108,7 +112,7 @@
         android:fontFamily="@font/arima_madurai_thin"
         android:gravity="start"
         android:maxLines="1"
-        android:text="00:00"
+        tools:text="00:00"
         android:textColor="@color/text_color_1"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="@+id/seekBar"
@@ -125,7 +129,7 @@
         android:fontFamily="@font/arima_madurai_thin"
         android:gravity="end"
         android:maxLines="1"
-        android:text="00:00:00"
+        tools:text="00:00:00"
         android:textColor="@color/text_color_1"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="@+id/seekBar"

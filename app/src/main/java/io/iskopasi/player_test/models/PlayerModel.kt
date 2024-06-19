@@ -25,13 +25,16 @@ class PlayerModel(context: Application) : AndroidViewModel(context) {
         MediaData(R.drawable.i8, "Daily thoughts", "Being useful every day", 5098567),
         MediaData(R.drawable.i9, "Science pepe", "Memetic warfare", 98234),
         MediaData(R.drawable.i10, "Anger and Wraith", "Not even mad", 9380468),
+        MediaData(R.drawable.none, "No track", "No image", 12312),
     )
     var currentData = MutableLiveData(test.first())
     var isPlaying = MutableLiveData(false)
+    var isShuffling = MutableLiveData(false)
+    var isRepeating = MutableLiveData(false)
     var currentProgress = MutableLiveData(0)
 
-    fun shuffle() {
-        currentData.value = test[(0..10).random()]
+    fun next() {
+        currentData.value = test[test.indices.random()]
         currentProgress.value = (0..currentData.value!!.duration).random()
     }
 
@@ -45,5 +48,13 @@ class PlayerModel(context: Application) : AndroidViewModel(context) {
 
     fun pause() {
         isPlaying.value = false
+    }
+
+    fun shuffle() {
+        isShuffling.value = !isShuffling.value!!
+    }
+
+    fun repeat() {
+        isRepeating.value = !isRepeating.value!!
     }
 }
