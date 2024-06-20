@@ -12,6 +12,17 @@
         android:id="@+id/bg_include"
         layout="@layout/image_bg" />
 
+    <io.iskopasi.player_test.views.VolumeView
+        android:layout_width="150dp"
+        android:layout_height="0dp"
+        android:clickable="true"
+        app:layout_constraintBottom_toBottomOf="@+id/image_f"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.78"
+        app:layout_constraintStart_toEndOf="@+id/image_f"
+        app:layout_constraintStart_toStartOf="@+id/image_f"
+        app:layout_constraintTop_toTopOf="@+id/image_f" />
+
     <io.iskopasi.player_test.views.AnimatedBorderFrameView
         android:id="@+id/image_f"
         android:layout_width="250dp"

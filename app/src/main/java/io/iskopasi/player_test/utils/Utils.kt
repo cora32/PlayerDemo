@@ -1,10 +1,13 @@
 package io.iskopasi.player_test.utils
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.media.AudioManager
 import android.util.Log
 import android.view.View
 import android.webkit.MimeTypeMap
@@ -18,8 +21,11 @@ import io.iskopasi.player_test.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.math.PI
 
 
 //private val Context.getStatusBarHeight: Int
@@ -126,3 +132,25 @@ fun File.share(context: Context, subject: String, text: String) {
         setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }, null)
 }
+
+fun Int.toRadians(): Float = this.toFloat().toRadians()
+fun Float.toRadians(): Float = this * (PI / 180).toFloat()
+
+val Context.musicVolumeFlow
+    get() = callbackFlow {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                when (intent.getIntExtra("android.media.EXTRA_VOLUME_STREAM_TYPE", 0)) {
+                    AudioManager.STREAM_MUSIC -> trySend(
+                        intent.getIntExtra(
+                            "android.media.EXTRA_VOLUME_STREAM_VALUE",
+                            0
+                        )
+                    )
+                }
+            }
+        }
+
+        registerReceiver(receiver, IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
+        awaitClose { unregisterReceiver(receiver) }
+    }

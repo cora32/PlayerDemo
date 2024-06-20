@@ -173,6 +173,8 @@ class MainFragment : Fragment() {
 //            .placeholder(spinner)
             .transition(DrawableTransitionOptions.withCrossFade())
             .downsample(DownsampleStrategy.CENTER_INSIDE)
+            .override(200, 200)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
             .error(R.drawable.none)
             .apply(RequestOptions.bitmapTransform(BlurTransformation(25, 3)))
             .into(binding.bgInclude.imageBg)
