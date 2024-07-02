@@ -50,6 +50,7 @@ class SlidingContainer @JvmOverloads constructor(
     private var containerWidth = 0
     private var containerHeight = 0
     private var currentState: SlidingScreenPosition = SlidingScreenPosition.CENTER
+    private var prevState: SlidingScreenPosition = SlidingScreenPosition.CENTER
     private val viewMap = mutableMapOf<String, View>()
     val bindingMap = mutableMapOf<KClass<*>, ViewBinding>()
     private val metrics by lazy {
@@ -110,21 +111,21 @@ class SlidingContainer @JvmOverloads constructor(
                     "--> onFling: ${velocityX} $velocityY".e
                     var consume = false
                     if (abs(velocityX) > abs(velocityY)) {
-                        if (velocityX > 0) {
+                        if (velocityX > 3000) {
                             goLeft()
 
                             consume = true
-                        } else if (velocityX < 0) {
+                        } else if (velocityX < -3000) {
                             goRight()
 
                             consume = true
                         }
                     } else {
-                        if (velocityY > 0) {
+                        if (velocityY > 3000) {
                             goTop()
 
                             consume = true
-                        } else if (velocityY < 0) {
+                        } else if (velocityY < -3000) {
                             goBottom()
 
                             consume = true
@@ -195,22 +196,23 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun runAnimations() {
-        val prevState = currentState
+        currentState = positionMap[yScreenIndex][xScreenIndex]
 
         if (prevState == currentState) {
             reset()
         }
-        currentState = positionMap[yScreenIndex][xScreenIndex]
-
-        "--> Animating from $prevState to $currentState $xScreenIndex $yScreenIndex".e
 
         animationX = getXAnimator()
         animationY = getYAnimator()
+
+        "--> Animating from $prevState to $currentState $xScreenIndex $yScreenIndex".e
 
         AnimatorSet().apply {
             playTogether(animationX, animationY)
             start()
         }
+
+        prevState = currentState
     }
 
     private fun lockScreenCoords() {
@@ -313,10 +315,30 @@ class SlidingContainer @JvmOverloads constructor(
 //        }
     }
 
+    private fun getXValue(): Float {
+        val destinationX = if (currentState.xOffset > prevState.xOffset) {
+            -frameWidth.toFloat()
+        } else if (currentState.xOffset < prevState.xOffset) {
+            frameWidth.toFloat()
+        } else 0f
+
+        return destinationX - tempDeltaX
+    }
+
+    private fun getYValue(): Float {
+        val destinationY = if (currentState.yOffset > prevState.yOffset) {
+            -frameHeight.toFloat()
+        } else if (currentState.yOffset < prevState.yOffset) {
+            frameHeight.toFloat()
+        } else 0f
+
+        return destinationY - tempDeltaY
+    }
+
     private fun getXAnimator(): ValueAnimator {
         savedGlobalDeltaX = globalDeltaX
 
-        return ValueAnimator.ofFloat(0f, -currentState.xOffset * frameWidth.toFloat() - tempDeltaX)
+        return ValueAnimator.ofFloat(0f, getXValue())
             .apply {
                 interpolator = DecelerateInterpolator()
                 addUpdateListener { anim ->
@@ -329,7 +351,7 @@ class SlidingContainer @JvmOverloads constructor(
     private fun getYAnimator(): ValueAnimator {
         savedGlobalDeltaY = globalDeltaY
 
-        return ValueAnimator.ofFloat(0f, -currentState.yOffset * frameHeight.toFloat() + tempDeltaY)
+        return ValueAnimator.ofFloat(0f, getYValue())
             .apply {
                 interpolator = DecelerateInterpolator()
                 addUpdateListener { anim ->
@@ -348,7 +370,7 @@ class SlidingContainer @JvmOverloads constructor(
     private var parallaxDeltaX = 0f
     private var parallaxDeltaY = 0f
     private fun moveX(deltaX: Float) {
-        parallaxDeltaX = deltaX / 2f
+        parallaxDeltaX = deltaX / 3f
         x = oldRootX + parallaxDeltaX
 
         for (view in viewMap.values) {
@@ -359,7 +381,7 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun moveY(deltaY: Float) {
-        parallaxDeltaY = deltaY / 2f
+        parallaxDeltaY = deltaY / 3f
         y = oldRootY + parallaxDeltaY
 
         for (view in viewMap.values) {

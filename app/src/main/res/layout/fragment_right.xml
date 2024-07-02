@@ -8,10 +8,10 @@
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:cardCornerRadius="32dp"
+        app:cardCornerRadius="8dp"
         android:layout_gravity="center"
-        app:cardBackgroundColor="#BAFF0000"
-        android:background="#BAFF0000">
+        app:cardBackgroundColor="#22FF0000"
+        android:background="#22FF0000">
 
         <TextView
             android:layout_width="wrap_content"
