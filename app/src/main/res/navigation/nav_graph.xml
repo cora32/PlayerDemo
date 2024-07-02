@@ -5,51 +5,6 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/main_view">
 
-    <!--    <fragment-->
-    <!--        android:id="@+id/SelectorFragment"-->
-    <!--        android:name="io.iskopasi.player_test.fragments.SelectorFragment"-->
-    <!--        android:label="@string/select_fragment_label"-->
-    <!--        tools:layout="@layout/fragment_selector">-->
-
-    <!--        <action-->
-    <!--            android:id="@+id/action_to_xml"-->
-    <!--            app:destination="@id/XmlFragment" />-->
-
-    <!--        <action-->
-    <!--            android:id="@+id/action_to_compose"-->
-    <!--            app:destination="@id/ComposeFragment" />-->
-
-    <!--        <action-->
-    <!--            android:id="@+id/action_to_rx"-->
-    <!--            app:destination="@id/placeholder" />-->
-
-    <!--        <action-->
-    <!--            android:id="@+id/action_to_permission_denied"-->
-    <!--            app:destination="@id/permission_denied" />-->
-
-    <!--    </fragment>-->
-
-    <!--    <fragment-->
-    <!--        android:id="@+id/XmlFragment"-->
-    <!--        android:name="io.iskopasi.player_test.fragments.XmlFragment2"-->
-    <!--        android:label="@string/first_fragment_label"-->
-    <!--        tools:layout="@layout/fragment_xml2">-->
-
-    <!--        &lt;!&ndash;        <action&ndash;&gt;-->
-    <!--        &lt;!&ndash;            android:id="@+id/action_FirstFragment_to_SecondFragment"&ndash;&gt;-->
-    <!--        &lt;!&ndash;            app:destination="@id/SecondFragment" />&ndash;&gt;-->
-    <!--    </fragment>-->
-
-    <!--    <fragment-->
-    <!--        android:id="@+id/ComposeFragment"-->
-    <!--        android:name="io.iskopasi.player_test.fragments.SecondFragment"-->
-    <!--        android:label="@string/second_fragment_label"-->
-    <!--        tools:layout="@layout/fragment_second">-->
-    <!--        &lt;!&ndash;        <action&ndash;&gt;-->
-    <!--        &lt;!&ndash;            android:id="@+id/action_SecondFragment_to_FirstFragment"&ndash;&gt;-->
-    <!--        &lt;!&ndash;            app:destination="@id/FirstFragment" />&ndash;&gt;-->
-    <!--    </fragment>-->
-
     <fragment
         android:id="@+id/permission_denied"
         android:name="io.iskopasi.player_test.fragments.PermissionDeniedFragment"

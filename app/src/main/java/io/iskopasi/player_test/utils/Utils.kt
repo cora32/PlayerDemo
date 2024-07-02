@@ -96,23 +96,29 @@ object Utils {
 //    }
 }
 
+data class ColorsData(val vibrant: Int, val darkVibrant: Int)
 
-fun Int.getAccent(context: Context, block: (Int?) -> Unit) {
+fun Int.getAccent(context: Context, block: (ColorsData?) -> Unit) {
     val bt = BitmapFactory.decodeResource(
         context.resources,
         this
     )
 
     Palette.from(bt).generate { palette ->
-        block(
-            palette!!.getVibrantColor(
-                ResourcesCompat.getColor(
-                    context.resources,
-                    io.iskopasi.player_test.R.color.silver, null
-                )
+        val vibrant = palette!!.getVibrantColor(
+            ResourcesCompat.getColor(
+                context.resources,
+                io.iskopasi.player_test.R.color.silver, null
+            )
+        )
+        val darkVibrant = palette.getDarkVibrantColor(
+            ResourcesCompat.getColor(
+                context.resources,
+                io.iskopasi.player_test.R.color.silver, null
             )
         )
 
+        block(ColorsData(vibrant, darkVibrant))
     }
 }
 
