@@ -14,6 +14,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestOptions
+import dagger.hilt.android.AndroidEntryPoint
 import io.iskopasi.player_test.R
 import io.iskopasi.player_test.databinding.FragmentLeftBinding
 import io.iskopasi.player_test.databinding.FragmentMainBinding
@@ -23,11 +24,12 @@ import io.iskopasi.player_test.databinding.TopScreenBinding
 import io.iskopasi.player_test.models.MediaData
 import io.iskopasi.player_test.models.PlayerModel
 import io.iskopasi.player_test.utils.getAccent
+import io.iskopasi.player_test.utils.toBitmap
 import io.iskopasi.player_test.views.SlidingScreen
 import io.iskopasi.player_test.views.SlidingScreenPosition
 import jp.wasabeef.glide.transformations.BlurTransformation
 
-
+@AndroidEntryPoint
 class MainFragment : Fragment() {
     private lateinit var binding: FragmentMainBinding
     private val centerBinding by lazy { binding.container.getBinding<FragmentScreenMainBinding>() }
@@ -83,7 +85,7 @@ class MainFragment : Fragment() {
 //            )
 //        )
         model.currentData.observe(requireActivity()) {
-            loadData(it)
+            loadData(it!!)
         }
 
         model.currentProgress.observe(requireActivity()) {
@@ -183,35 +185,60 @@ class MainFragment : Fragment() {
         Glide.with(requireContext().applicationContext).clear(centerBinding.image)
         Glide.with(requireContext().applicationContext).clear(binding.bgInclude.imageBg)
 
-        Glide
-            .with(requireContext().applicationContext)
-            .load(data.image)
+        data.path.toBitmap?.also { bitmap ->
+            Glide
+                .with(requireContext().applicationContext)
+                .load(bitmap)
 //            .placeholder(spinner)
-            .transition(DrawableTransitionOptions.withCrossFade())
-            .circleCrop()
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .error(R.drawable.none)
-            .into(centerBinding.image)
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .circleCrop()
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .error(R.drawable.none)
+                .into(centerBinding.image)
 
-        Glide
-            .with(requireContext().applicationContext)
-            .load(data.image)
-            .centerCrop()
+            Glide
+                .with(requireContext().applicationContext)
+                .load(bitmap)
+                .centerCrop()
 //            .placeholder(spinner)
-            .transition(DrawableTransitionOptions.withCrossFade())
-            .downsample(DownsampleStrategy.CENTER_INSIDE)
-            .override(200, 200)
-            .diskCacheStrategy(DiskCacheStrategy.NONE)
-            .error(R.drawable.none)
-            .apply(RequestOptions.bitmapTransform(BlurTransformation(15, 1)))
-            .into(binding.bgInclude.imageBg)
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .downsample(DownsampleStrategy.CENTER_INSIDE)
+                .override(200, 200)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .error(R.drawable.none)
+                .apply(RequestOptions.bitmapTransform(BlurTransformation(15, 1)))
+                .into(binding.bgInclude.imageBg)
+        } ?: run {
+            Glide
+                .with(requireContext().applicationContext)
+                .load(data.imageId)
+//            .placeholder(spinner)
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .circleCrop()
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .error(R.drawable.none)
+                .into(centerBinding.image)
+
+            Glide
+                .with(requireContext().applicationContext)
+                .load(data.imageId)
+                .centerCrop()
+//            .placeholder(spinner)
+                .transition(DrawableTransitionOptions.withCrossFade())
+                .downsample(DownsampleStrategy.CENTER_INSIDE)
+                .override(200, 200)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .error(R.drawable.none)
+                .apply(RequestOptions.bitmapTransform(BlurTransformation(15, 1)))
+                .into(binding.bgInclude.imageBg)
+        }
 
         centerBinding.tv.text = data.name
         centerBinding.tv2.text = data.subtitle
         centerBinding.controls.seekBar.max = data.duration
         centerBinding.controls.timerEnd.text = DateUtils.formatElapsedTime(data.duration.toLong())
 
-        data.image.getAccent(requireContext().applicationContext) {
+        data.imageId.getAccent(requireContext().applicationContext, data.path) {
             it?.let {
                 centerBinding.imageF.setBorderColor(it.darkVibrant)
                 binding.bgInclude.gradientFrame.setColor(it.vibrant)

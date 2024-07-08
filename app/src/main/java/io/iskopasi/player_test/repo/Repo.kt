@@ -1,11 +1,8 @@
 package io.iskopasi.player_test
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.media.MediaMetadataRetriever
 import android.provider.MediaStore
 import io.iskopasi.player_test.utils.Utils.e
-import io.iskopasi.player_test.utils.Utils.toBitmap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,9 +10,9 @@ data class MediaFile(
     val id: Int = -1,
     val albumId: Int = -1,
     val path: String = "",
-    val name: String? = "",
-    val album: String? = "",
-    val artist: String? = "",
+    val name: String = "",
+    val album: String = "",
+    val artist: String = "",
     val duration: Long = 0L,
 ) {
     override fun toString(): String {
@@ -25,12 +22,6 @@ data class MediaFile(
 
 @Singleton
 class Repo @Inject constructor() {
-    fun getImage(path: String): Bitmap? = MediaMetadataRetriever().run {
-        setDataSource(path)
-
-        embeddedPicture?.toBitmap()
-    }
-
     fun read(context: Context): List<MediaFile> {
         "--> Reading... ${Thread.currentThread().name}".e
 

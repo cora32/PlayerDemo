@@ -5,9 +5,9 @@ import android.graphics.Bitmap
 import android.media.MediaPlayer
 import androidx.lifecycle.MutableLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.iskopasi.player_test.LoopIterator
 import io.iskopasi.player_test.MediaFile
 import io.iskopasi.player_test.Repo
+import io.iskopasi.player_test.utils.LoopIterator
 import io.iskopasi.player_test.utils.Utils.e
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -82,9 +82,9 @@ class PlayerXMLViewModel @Inject constructor(
         if (path == null) {
             image.postValue(null)
         } else {
-            bg {
-                image.postValue(repo.getImage(path))
-            }
+//            bg {
+//                image.postValue(repo.getImageBitmap(path))
+//            }
         }
     }
 

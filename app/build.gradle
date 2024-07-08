@@ -4,6 +4,8 @@ plugins {
     id 'kotlin-kapt'
     id 'com.google.dagger.hilt.android'
     id 'androidx.navigation.safeargs.kotlin'
+
+    id "com.google.devtools.ksp" version "2.0.20-Beta1-1.0.22"
 }
 
 android {
@@ -96,6 +98,11 @@ dependencies {
     implementation 'jp.wasabeef:glide-transformations:4.3.0'
     implementation "androidx.core:core-ktx:1.13.1"
 
+    implementation "androidx.room:room-runtime:2.6.1"
+    implementation "androidx.room:room-ktx:2.6.1"
+    annotationProcessor "androidx.room:room-compiler:2.6.1"
+    ksp "androidx.room:room-compiler:2.6.1"
+//    ksp("androidx.room:room-compiler:2.6.1")
 
     // TODO: implement exoplayer
 //    implementation("androidx.media3:media3-exoplayer:1.2.1")

@@ -1,4 +1,4 @@
-package io.iskopasi.player_test
+package io.iskopasi.player_test.utils
 
 import io.iskopasi.player_test.utils.Utils.e
 

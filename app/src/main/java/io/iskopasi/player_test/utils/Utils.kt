@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.media.AudioManager
+import android.media.MediaMetadataRetriever
 import android.util.Log
 import android.view.View
 import android.webkit.MimeTypeMap
@@ -18,6 +19,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.palette.graphics.Palette
 import io.iskopasi.player_test.BuildConfig
+import io.iskopasi.player_test.utils.Utils.e
+import io.iskopasi.player_test.utils.Utils.toBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -98,8 +101,24 @@ object Utils {
 
 data class ColorsData(val vibrant: Int, val darkVibrant: Int)
 
-fun Int.getAccent(context: Context, block: (ColorsData?) -> Unit) {
-    val bt = BitmapFactory.decodeResource(
+fun getImageBitmap(path: String): Bitmap? = MediaMetadataRetriever().run {
+    "---> path: $path".e
+
+    if (path.isEmpty()) return null
+
+    setDataSource(path)
+
+    embeddedPicture?.toBitmap()
+}
+
+val String.toBitmap: Bitmap?
+    get() {
+        return getImageBitmap(this)
+    }
+
+fun Int.getAccent(context: Context, path: String, block: (ColorsData?) -> Unit) {
+    // Retrieves either bitmap from path or bitmap from resource
+    val bt = path.toBitmap ?: BitmapFactory.decodeResource(
         context.resources,
         this
     )
