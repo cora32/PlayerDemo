@@ -107,8 +107,8 @@
 
     <TextView
         android:id="@+id/timer_start"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="80dp"
+        android:layout_height="13dp"
         android:fontFamily="@font/arima_madurai_thin"
         android:gravity="start"
         android:maxLines="1"
@@ -124,8 +124,8 @@
 
     <TextView
         android:id="@+id/timer_end"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="80dp"
+        android:layout_height="13dp"
         android:fontFamily="@font/arima_madurai_thin"
         android:gravity="end"
         android:maxLines="1"

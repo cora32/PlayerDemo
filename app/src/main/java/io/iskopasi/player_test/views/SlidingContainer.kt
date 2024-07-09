@@ -15,6 +15,7 @@ import androidx.viewbinding.ViewBinding
 import androidx.window.layout.WindowMetricsCalculator
 import io.iskopasi.player_test.utils.Utils.e
 import kotlin.math.abs
+import kotlin.math.round
 import kotlin.reflect.KClass
 
 
@@ -47,11 +48,14 @@ class SlidingContainer @JvmOverloads constructor(
     private var oldRootY = 0f
     private var startX = 0f
     private var startY = 0f
+    private var parallaxDeltaX = 0f
+    private var parallaxDeltaY = 0f
     private var containerWidth = 0
     private var containerHeight = 0
     private var currentState: SlidingScreenPosition = SlidingScreenPosition.CENTER
     private var prevState: SlidingScreenPosition = SlidingScreenPosition.CENTER
     private val viewMap = mutableMapOf<String, View>()
+    private val velocityThreshold = 2000
     val bindingMap = mutableMapOf<KClass<*>, ViewBinding>()
     private val metrics by lazy {
         WindowMetricsCalculator.getOrCreate()
@@ -108,27 +112,30 @@ class SlidingContainer @JvmOverloads constructor(
                     velocityX: Float,
                     velocityY: Float
                 ): Boolean {
-                    "--> onFling: ${velocityX} $velocityY".e
                     var consume = false
                     if (abs(velocityX) > abs(velocityY)) {
-                        if (velocityX > 3000) {
+                        if (velocityX > velocityThreshold) {
                             goLeft()
 
                             consume = true
-                        } else if (velocityX < -3000) {
+                        } else if (velocityX < -velocityThreshold) {
                             goRight()
 
                             consume = true
+                        } else {
+                            "velocityX = 0".e
                         }
                     } else {
-                        if (velocityY > 3000) {
-                            goTop()
+                        if (velocityY > velocityThreshold) {
+                            goUp()
 
                             consume = true
-                        } else if (velocityY < -3000) {
-                            goBottom()
+                        } else if (velocityY < -velocityThreshold) {
+                            goDown()
 
                             consume = true
+                        } else {
+                            "velocityY = 0".e
                         }
                     }
 
@@ -160,12 +167,23 @@ class SlidingContainer @JvmOverloads constructor(
         isClickable = true
     }
 
+    private fun resetIndexes() {
+        currentState = prevState
+
+        "--> Resetting indexes from $xScreenIndex $yScreenIndex to ${prevState.xOffset + 1} ${prevState.yOffset + 1}".e
+        xScreenIndex = prevState.xOffset + 1
+        yScreenIndex = prevState.yOffset + 1
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val consumed = gestureDetector.onTouchEvent(event)
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                stopAnimations()
+                // If user touched view before animations completed, reset frame indexes
+                if (stopAnimations()) {
+                    resetIndexes()
+                }
 
                 startX = event.x
                 startY = event.y
@@ -184,9 +202,8 @@ class SlidingContainer @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_UP -> {
-                if (!consumed) {
-                    reset()
-                }
+                prevState = currentState
+                currentState = positionMap[yScreenIndex][xScreenIndex]
 
                 runAnimations()
             }
@@ -196,12 +213,6 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun runAnimations() {
-        currentState = positionMap[yScreenIndex][xScreenIndex]
-
-        if (prevState == currentState) {
-            reset()
-        }
-
         animationX = getXAnimator()
         animationY = getYAnimator()
 
@@ -211,108 +222,38 @@ class SlidingContainer @JvmOverloads constructor(
             playTogether(animationX, animationY)
             start()
         }
-
-        prevState = currentState
     }
 
-    private fun lockScreenCoords() {
-        // Saving start views' coordinates
-        for (view in viewMap.values) {
-            startXCoordMap[view] = view.x
-            startYCoordMap[view] = view.y
-        }
+    private fun goUp() {
+        "--> goUp:".e
 
-        // Start container coordinates
-        oldRootX = x
-        oldRootY = y
-    }
-
-    private fun reset() {
-        "--> Reset position".e
-
-//        savedGlobalDeltaX = globalDeltaX
-//        val savedTempDeltaX = tempDeltaX
-//        animationX = ValueAnimator.ofFloat(0f, -savedTempDeltaX).apply {
-//            interpolator = DecelerateInterpolator()
-//            addUpdateListener { anim ->
-//                globalDeltaX = savedGlobalDeltaX + anim.animatedValue as Float
-//                moveX(globalDeltaX)
-//            }
-//        }
-//
-//        savedGlobalDeltaY = globalDeltaY
-//        val savedTempDeltaY = tempDeltaY
-//        animationY = ValueAnimator.ofFloat(0f, -savedTempDeltaY).apply {
-//            interpolator = DecelerateInterpolator()
-//            addUpdateListener { anim ->
-//                globalDeltaY = savedGlobalDeltaY + anim.animatedValue as Float
-//                moveY(globalDeltaY)
-//            }
-//        }
-    }
-
-    private fun goTop() {
-        "--> goTop:".e
-
-        if (yScreenIndex > 0)
+        if (yScreenIndex > 0) {
             yScreenIndex--
-
-//        savedGlobalDeltaY = globalDeltaY
-//        animationY = ValueAnimator.ofFloat(0f, frameHeight.toFloat() - tempDeltaY).apply {
-//            interpolator = DecelerateInterpolator()
-//            addUpdateListener { anim ->
-//                globalDeltaY = savedGlobalDeltaY + anim.animatedValue as Float
-//                moveY(globalDeltaY)
-//            }
-//        }
+        }
     }
 
-    private fun goBottom() {
-        "--> goBottom:".e
+    private fun goDown() {
+        "--> goDown:".e
 
-        if (yScreenIndex < 2)
+        if (yScreenIndex < 2) {
             yScreenIndex++
-
-//        savedGlobalDeltaY = globalDeltaY
-//        animationY = ValueAnimator.ofFloat(0f, -frameHeight.toFloat() + tempDeltaY).apply {
-//            interpolator = DecelerateInterpolator()
-//            addUpdateListener { anim ->
-//                globalDeltaY = savedGlobalDeltaY + anim.animatedValue as Float
-//                moveY(globalDeltaY)
-//            }
-//        }
+        }
     }
 
     private fun goRight() {
         "--> goRight:".e
 
-        if (xScreenIndex < 2)
+        if (xScreenIndex < 2) {
             xScreenIndex++
-
-//        savedGlobalDeltaX = globalDeltaX
-//        animationX = ValueAnimator.ofFloat(0f, -frameWidth.toFloat() - tempDeltaX).apply {
-//            interpolator = DecelerateInterpolator()
-//            addUpdateListener { anim ->
-//                globalDeltaX = savedGlobalDeltaX + anim.animatedValue as Float
-//                moveX(globalDeltaX)
-//            }
-//        }
+        }
     }
 
     private fun goLeft() {
         "--> goLeft:".e
 
-        if (xScreenIndex > 0)
+        if (xScreenIndex > 0) {
             xScreenIndex--
-
-//        savedGlobalDeltaX = globalDeltaX
-//        animationX = ValueAnimator.ofFloat(0f, frameWidth.toFloat() - tempDeltaX).apply {
-//            interpolator = DecelerateInterpolator()
-//            addUpdateListener { anim ->
-//                globalDeltaX = savedGlobalDeltaX + anim.animatedValue as Float
-//                moveX(globalDeltaX)
-//            }
-//        }
+        }
     }
 
     private fun getXValue(): Float {
@@ -335,10 +276,23 @@ class SlidingContainer @JvmOverloads constructor(
         return destinationY - tempDeltaY
     }
 
+    private fun Float.getXAdjustment(savedGlobalDeltaX: Float): Float {
+        val snapped = round((this + savedGlobalDeltaX) / frameWidth) * frameWidth
+        return snapped - (this + savedGlobalDeltaX)
+    }
+
+    private fun Float.getYAdjustment(savedGlobalDeltaY: Float): Float {
+        val snapped = round((this + savedGlobalDeltaY) / frameHeight) * frameHeight
+        return snapped - (this + savedGlobalDeltaY)
+    }
+
     private fun getXAnimator(): ValueAnimator {
         savedGlobalDeltaX = globalDeltaX
 
-        return ValueAnimator.ofFloat(0f, getXValue())
+        val xValue = getXValue()
+        val xAdjustment = xValue.getXAdjustment(savedGlobalDeltaX)
+
+        return ValueAnimator.ofFloat(0f, xValue + xAdjustment)
             .apply {
                 interpolator = DecelerateInterpolator()
                 addUpdateListener { anim ->
@@ -351,7 +305,10 @@ class SlidingContainer @JvmOverloads constructor(
     private fun getYAnimator(): ValueAnimator {
         savedGlobalDeltaY = globalDeltaY
 
-        return ValueAnimator.ofFloat(0f, getYValue())
+        val yValue = getYValue()
+        val yAdjustment = yValue.getYAdjustment(savedGlobalDeltaY)
+
+        return ValueAnimator.ofFloat(0f, yValue + yAdjustment)
             .apply {
                 interpolator = DecelerateInterpolator()
                 addUpdateListener { anim ->
@@ -361,14 +318,15 @@ class SlidingContainer @JvmOverloads constructor(
             }
     }
 
-    private fun stopAnimations() {
+    private fun stopAnimations(): Boolean {
+        val wasRunning = animationX.isRunning || animationY.isRunning
+
         animationX.cancel()
         animationY.cancel()
-        "--> stopAnimations: lastAnimatedDeltaX".e
+
+        return wasRunning
     }
 
-    private var parallaxDeltaX = 0f
-    private var parallaxDeltaY = 0f
     private fun moveX(deltaX: Float) {
         parallaxDeltaX = deltaX / 3f
         x = oldRootX + parallaxDeltaX
@@ -376,8 +334,6 @@ class SlidingContainer @JvmOverloads constructor(
         for (view in viewMap.values) {
             view.x = startXCoordMap[view]!! + deltaX - parallaxDeltaX
         }
-
-//        detectState()
     }
 
     private fun moveY(deltaY: Float) {
@@ -387,40 +343,7 @@ class SlidingContainer @JvmOverloads constructor(
         for (view in viewMap.values) {
             view.y = startYCoordMap[view]!! + deltaY - parallaxDeltaY
         }
-
-//        detectState()
     }
-
-//    val actualPosition: Rect = Rect()
-//    val screen: Rect = Rect(0, 0, frameWidth, frameHeight)
-//    private fun isVisible(view: View?): Boolean {
-//        if (view == null || !view.isShown) {
-//            return false
-//        }
-//        view.getGlobalVisibleRect(actualPosition)
-//        return actualPosition.intersect(screen)
-//    }
-
-//    private fun detectState() {
-//        val centralScreen = viewMap[SlidingScreenPosition.CENTER.name]!!
-//        val screenX = centralScreen.x - frameWidth + parallaxDeltaX
-//        val screenY = centralScreen.y - frameHeight + parallaxDeltaY
-//
-//        when (screenX) {
-//            0f -> {
-//                "--> Setting current state: ${SlidingScreenPosition.CENTER}".e
-//                currentState = SlidingScreenPosition.CENTER
-//            }
-//            -frameWidth.toFloat() -> {
-//                "--> Setting current state: ${SlidingScreenPosition.RIGHT}".e
-//                currentState = SlidingScreenPosition.RIGHT
-//            }
-//            frameWidth.toFloat() -> {
-//                "--> Setting current state: ${SlidingScreenPosition.LEFT}".e
-//                currentState = SlidingScreenPosition.LEFT
-//            }
-//        }
-//    }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
@@ -435,7 +358,9 @@ class SlidingContainer @JvmOverloads constructor(
 
         setMeasuredDimension(containerWidth, containerHeight)
 
-        lockScreenCoords()
+        // Start container coordinates
+        oldRootX = x
+        oldRootY = y
     }
 
     private fun adjustContainerSize() {
@@ -469,6 +394,10 @@ class SlidingContainer @JvmOverloads constructor(
                         y
                     )
                 view.layoutParams = LayoutParams(frameWidth, frameHeight)
+
+                // Saving views initial coordinates to be used as starting point in transitions
+                startXCoordMap[view] = view.x
+                startYCoordMap[view] = view.y
 
                 "--> Frame: $frameWidth, $frameHeight; ${view.x}, ${view.y}".e
             }
