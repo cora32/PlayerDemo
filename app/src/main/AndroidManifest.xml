@@ -29,8 +29,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".activities.PlayerXMLActivity" />
-        <activity android:name=".activities.PlayerJetpackActivity" />
+        <!--        <activity android:name=".activities.PlayerXMLActivity" />-->
+        <!--        <activity android:name=".activities.PlayerJetpackActivity" />-->
+        <!--        <activity android:name=".activities.BlurDialogActivity" />-->
 
         <!-- FileProvider used to share media with other apps -->
         <provider

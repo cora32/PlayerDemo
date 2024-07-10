@@ -3,6 +3,9 @@ package io.iskopasi.player_test.views
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.LayoutInflater
@@ -11,8 +14,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
+import androidx.core.content.ContextCompat
 import androidx.viewbinding.ViewBinding
 import androidx.window.layout.WindowMetricsCalculator
+import io.iskopasi.player_test.databinding.MenuLayoutBinding
 import io.iskopasi.player_test.utils.Utils.e
 import kotlin.math.abs
 import kotlin.math.round
@@ -44,6 +49,10 @@ class SlidingContainer @JvmOverloads constructor(
     defStyleAttr: Int = 0,
     defStyleRes: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr, defStyleRes) {
+    var menuOnPlay: ((Int) -> Unit)? = null
+    var menuOnInfo: ((Int) -> Unit)? = null
+    var menuOnShare: ((Int) -> Unit)? = null
+
     private var oldRootX = 0f
     private var oldRootY = 0f
     private var startX = 0f
@@ -162,6 +171,12 @@ class SlidingContainer @JvmOverloads constructor(
             SlidingScreenPosition.BOTTOM_RIGHT,
         )
     )
+    private val vibrator by lazy {
+        ContextCompat.getSystemService(
+            context.applicationContext,
+            Vibrator::class.java
+        )
+    }
 
     init {
         isClickable = true
@@ -348,6 +363,11 @@ class SlidingContainer @JvmOverloads constructor(
         layoutParams = LayoutParams(frameWidth * xFactor, frameHeight * yFactor)
     }
 
+    private val menuBinding by lazy {
+        MenuLayoutBinding.inflate(LayoutInflater.from(context.applicationContext), this, false)
+//        LayoutInflater.from(context.applicationContext).inflate(R.layout.menu_layout, this, false)
+    }
+
     inline fun <reified T : ViewBinding> getBinding(): T = bindingMap[T::class] as T
 
     fun initialize(screens: List<SlidingScreen<ViewBinding>>) {
@@ -394,6 +414,9 @@ class SlidingContainer @JvmOverloads constructor(
         // Initial container coordinates
         oldRootX = x
         oldRootY = y
+
+        // Adding menu layout
+        addView(menuBinding.root)
     }
 
     private fun findMinMaxOffsets(position: SlidingScreenPosition) {
@@ -407,6 +430,110 @@ class SlidingContainer @JvmOverloads constructor(
             maxYOffset = position.yOffset
         } else if (position.yOffset < minYOffset) {
             minYOffset = position.yOffset
+        }
+    }
+
+    private fun setMenuSize(menuWidth: Int, menuHeight: Int) {
+        val menuView = menuBinding.root
+        val currentVisibleScreen = viewMap[currentState.name]!!
+
+        val offscreenOffset = currentVisibleScreen.x - (menuView.x - menuWidth)
+        if (offscreenOffset > 0) {
+            menuView.x += offscreenOffset
+        }
+
+        val oldX = menuView.x
+        val animationX = ValueAnimator.ofInt(0, menuWidth).apply {
+            interpolator = DecelerateInterpolator()
+            duration = 150L
+            addUpdateListener { anim ->
+                menuView.x = oldX - anim.animatedValue as Int
+            }
+        }
+        val animationWidth = ValueAnimator.ofInt(0, menuWidth).apply {
+            interpolator = DecelerateInterpolator()
+            duration = 150L
+            addUpdateListener { anim ->
+                menuView.layoutParams.width = anim.animatedValue as Int
+            }
+        }
+        val animationHeight = ValueAnimator.ofInt(0, menuHeight).apply {
+            interpolator = DecelerateInterpolator()
+            duration = 150L
+            addUpdateListener { anim ->
+                menuView.post {
+                    menuView.layoutParams.height = anim.animatedValue as Int
+                    menuView.requestLayout()
+                }
+            }
+        }
+
+        AnimatorSet().apply {
+            playTogether(animationX, animationWidth, animationHeight)
+            start()
+        }
+    }
+
+    private fun setMenuPosition(event: MotionEvent) {
+        val menuView = menuBinding.root
+        val currentVisibleScreen = viewMap[currentState.name]
+        menuView.x = currentVisibleScreen!!.x + event.rawX
+        menuView.y = currentVisibleScreen.y + event.rawY
+
+        // Correcting X and Y coordinates so the menu wont go out of screen
+        val offscreenX = currentVisibleScreen.x - menuView.x
+        val offscreenY = (menuView.y + menuView.height) - (currentVisibleScreen.y + frameHeight)
+        if (offscreenX > 0) {
+            menuView.x += offscreenX
+        }
+        if (offscreenY > 0) {
+            menuView.y -= offscreenY
+        }
+    }
+
+    fun showMenu(event: MotionEvent, index: Int) {
+        val menuView = menuBinding.root
+
+        menuBinding.menu1.setOnClickListener {
+            menuOnPlay?.invoke(index)
+            hideMenu()
+        }
+        menuBinding.menu2.setOnClickListener {
+            menuOnInfo?.invoke(index)
+            hideMenu()
+        }
+        menuBinding.menu3.setOnClickListener {
+            menuOnShare?.invoke(index)
+            hideMenu()
+        }
+
+        menuView.visibility = GONE
+
+        // Vibrate on menu show
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator?.vibrate(VibrationEffect.createOneShot(50L, 255))
+        } else {
+            vibrator?.vibrate(50L)
+        }
+
+        // Saving actual size
+        val menuWidth = menuView.width
+        val menuHeight = menuView.height
+
+        // Setting size to 0 to animate to actual size
+        menuView.layoutParams.width = 0
+        menuView.layoutParams.height = 0
+
+        menuView.visibility = VISIBLE
+
+        setMenuPosition(event)
+        setMenuSize(menuWidth, menuHeight)
+    }
+
+    fun hideMenu() {
+        val menuView = menuBinding.root
+        if (menuView.visibility != GONE) {
+            menuView.visibility = GONE
         }
     }
 }

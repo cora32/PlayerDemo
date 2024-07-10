@@ -49,7 +49,6 @@ fun MainFragment.setupCenter(
     }
 
     fun setImageResource(data: MediaData) {
-
         Glide
             .with(requireContext().applicationContext)
             .load(data.imageId)
@@ -218,7 +217,7 @@ fun MainFragment.setupCenter(
     }
 
     binding.btnShare.setOnClickListener {
-        model.share(requireContext().applicationContext)
+        model.share(requireContext().applicationContext, 0)
     }
 
 //        ui {

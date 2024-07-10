@@ -2,6 +2,7 @@ package io.iskopasi.player_test.adapters
 
 import android.text.format.DateUtils
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -9,7 +10,11 @@ import io.iskopasi.player_test.R
 import io.iskopasi.player_test.databinding.MediaListItemBinding
 import io.iskopasi.player_test.models.MediaData
 
-class MediaAdapter(val onClick: (Int) -> Unit) : RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
+
+class MediaAdapter(
+    val onClick: (Int) -> Unit,
+    val onLongPress: (MotionEvent, Int) -> Unit
+) : RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
     var data: List<MediaData> = emptyList()
         set(value) {
             field = value
@@ -30,11 +35,17 @@ class MediaAdapter(val onClick: (Int) -> Unit) : RecyclerView.Adapter<MediaAdapt
         val inflater = LayoutInflater.from(parent.context)
         val binding = MediaListItemBinding.inflate(inflater, parent, false)
 
+        binding.root.setOnTouchListener { v, event ->
+            lastEvent = event
+            false
+        }
+
         return ViewHolder(binding)
     }
 
     override fun getItemCount(): Int = data.size
 
+    private var lastEvent: MotionEvent? = null
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = data[position]
         val context = holder.itemView.context
@@ -54,10 +65,20 @@ class MediaAdapter(val onClick: (Int) -> Unit) : RecyclerView.Adapter<MediaAdapt
             duration.text = DateUtils.formatElapsedTime(item.duration.toLong() / 1000L)
             duration.setTextColor(textColorC)
 
-            root.setBackgroundColor(bgColorC)
+            if (position == active)
+                root.setBackgroundColor(bgColorC)
+            else
+                root.setBackgroundResource(R.drawable.ripple_selector_2)
 
             root.setOnClickListener {
                 onClick(position)
+            }
+            root.setOnLongClickListener {
+                lastEvent?.let {
+                    onLongPress(it, position)
+                }
+
+                true
             }
         }
     }

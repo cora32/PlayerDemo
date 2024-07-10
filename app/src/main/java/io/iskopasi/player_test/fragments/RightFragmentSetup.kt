@@ -12,10 +12,30 @@ fun MainFragment.setupRight(
     rootBinding: FragmentMainBinding
 ) {
     binding.recyclerView.layoutManager = LinearLayoutManager(requireContext().applicationContext)
-    val adapter = MediaAdapter { index ->
-        model.setMedia(index)
-    }
+    val adapter = MediaAdapter(
+        onClick = { index ->
+            model.setMedia(index)
+            rootBinding.container.hideMenu()
+        }, onLongPress = { event, index ->
+            rootBinding.container.menuOnPlay = {
+                model.setMedia(index)
+            }
+            rootBinding.container.menuOnInfo = {
+                model.showInfo(index)
+            }
+            rootBinding.container.menuOnShare = {
+                model.share(requireContext().applicationContext, index)
+            }
+            rootBinding.container.showMenu(event, index)
+        }
+    )
     binding.recyclerView.adapter = adapter
+    binding.recyclerView.setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
+        if (scrollY != oldScrollY) {
+            rootBinding.container.hideMenu()
+        }
+    }
+
     model.mediaList.observe(requireActivity()) {
         adapter.data = it
     }

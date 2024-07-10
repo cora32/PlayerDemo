@@ -13,14 +13,21 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <item name="colorControlHighlight">@color/ripple_material_dark</item>
         <!-- Customize your theme here. -->
+        <item name="android:windowIsTranslucent">true</item>
     </style>
 
     <style name="Theme.Player_test.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="android:windowIsTranslucent">true</item>
     </style>
 
     <style name="Theme.Player_test.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.Player_test.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="Theme.BlurryDialog" parent="Theme.MaterialComponents.Dialog">
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+
 </resources>

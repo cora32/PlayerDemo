@@ -146,9 +146,13 @@ class PlayerModel @Inject constructor(
         isFavorite.value = newValue
     }
 
-    fun share(context: Context) {
+    fun share(context: Context, index: Int) {
         val name = currentData.value!!.name
         val subtitle = currentData.value!!.subtitle
         File("").share(context, name, subtitle)
+    }
+
+    fun showInfo(index: Int) {
+
     }
 }
