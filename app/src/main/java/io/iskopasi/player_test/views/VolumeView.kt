@@ -142,7 +142,6 @@ class VolumeView @JvmOverloads constructor(
 
                 ui {
                     invalidate()
-                    requestLayout()
                 }
             }
         }
@@ -208,13 +207,13 @@ class VolumeView @JvmOverloads constructor(
         }
 
         // Draw outer scale
-        distance += outerRadius
+        val outerDistance = distance + outerRadius
         for (i in (-42..42) step 2) {
             val angle = i.toRadians()
-            val startX = angle.toX(distance) - outerXOffset
-            val startY = angle.toY(distance)
-            val endX = angle.toX(distance + 10) - outerXOffset
-            val endY = angle.toY(distance + 10)
+            val startX = angle.toX(outerDistance) - outerXOffset
+            val startY = angle.toY(outerDistance)
+            val endX = angle.toX(outerDistance + 10) - outerXOffset
+            val endY = angle.toY(outerDistance + 10)
 
             canvas.drawLine(
                 startX, startY, endX, endY,
@@ -236,7 +235,6 @@ class VolumeView @JvmOverloads constructor(
                         adjustVolume(volumeAngle)
 
                         invalidate()
-                        requestLayout()
                     } else {
                         allowDraw = x > centerX
 
@@ -274,7 +272,6 @@ class VolumeView @JvmOverloads constructor(
         adjustVolume(volumeAngle)
 
         invalidate()
-        requestLayout()
     }
 
     private fun adjustVolume(volumeAngle: Float) {

@@ -225,32 +225,24 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun goUp() {
-        "--> goUp:".e
-
         if (yScreenIndex > 0) {
             yScreenIndex--
         }
     }
 
     private fun goDown() {
-        "--> goDown:".e
-
         if (yScreenIndex < 2) {
             yScreenIndex++
         }
     }
 
     private fun goRight() {
-        "--> goRight:".e
-
         if (xScreenIndex < 2) {
             xScreenIndex++
         }
     }
 
     private fun goLeft() {
-        "--> goLeft:".e
-
         if (xScreenIndex > 0) {
             xScreenIndex--
         }
@@ -345,27 +337,12 @@ class SlidingContainer @JvmOverloads constructor(
         }
     }
 
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-
-        containerWidth = MeasureSpec.getSize(widthMeasureSpec)
-        containerHeight = MeasureSpec.getSize(heightMeasureSpec)
-
-        // Setting viewport to center of container
-        x = -(containerWidth / 2f - frameWidth / 2f)
-        y = -(containerHeight / 2f - frameHeight / 2f)
-        "--> Setting initial coordinates to $x $y".e
-
-        setMeasuredDimension(containerWidth, containerHeight)
-
-        // Start container coordinates
-        oldRootX = x
-        oldRootY = y
-    }
-
     private fun adjustContainerSize() {
         val xFactor = maxXOffset + abs(minXOffset) + 1
         val yFactor = maxYOffset + abs(minYOffset) + 1
+
+        containerWidth = frameWidth * xFactor
+        containerHeight = frameHeight * yFactor
 
         "--> xFactor: $xFactor; yFactor: $yFactor;  container width: ${frameWidth * xFactor}; height: ${frameHeight * yFactor}".e
         layoutParams = LayoutParams(frameWidth * xFactor, frameHeight * yFactor)
@@ -408,6 +385,15 @@ class SlidingContainer @JvmOverloads constructor(
 
         // Setting container width/height
         adjustContainerSize()
+
+        // Setting viewport to center of container
+        x = -(containerWidth / 2f - frameWidth / 2f)
+        y = -(containerHeight / 2f - frameHeight / 2f)
+        "--> Setting initial coordinates to $x $y".e
+
+        // Initial container coordinates
+        oldRootX = x
+        oldRootY = y
     }
 
     private fun findMinMaxOffsets(position: SlidingScreenPosition) {

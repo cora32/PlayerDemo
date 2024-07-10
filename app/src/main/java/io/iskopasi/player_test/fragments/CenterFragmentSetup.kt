@@ -1,8 +1,10 @@
 package io.iskopasi.player_test.fragments
 
+import android.graphics.Bitmap
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.text.format.DateUtils
 import android.widget.SeekBar
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
@@ -16,6 +18,8 @@ import io.iskopasi.player_test.models.PlayerModel
 import io.iskopasi.player_test.utils.getAccent
 import io.iskopasi.player_test.utils.toBitmap
 import jp.wasabeef.glide.transformations.BlurTransformation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
 fun MainFragment.setupCenter(
@@ -44,56 +48,67 @@ fun MainFragment.setupCenter(
         }
     }
 
+    fun setImageResource(data: MediaData) {
+
+        Glide
+            .with(requireContext().applicationContext)
+            .load(data.imageId)
+//            .placeholder(spinner)
+            .transition(DrawableTransitionOptions.withCrossFade())
+            .circleCrop()
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .error(R.drawable.none)
+            .into(binding.image)
+
+        Glide
+            .with(requireContext().applicationContext)
+            .load(data.imageId)
+            .centerCrop()
+//            .placeholder(spinner)
+            .transition(DrawableTransitionOptions.withCrossFade())
+            .downsample(DownsampleStrategy.CENTER_INSIDE)
+            .override(200, 200)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .error(R.drawable.none)
+            .apply(RequestOptions.bitmapTransform(BlurTransformation(15, 1)))
+            .into(rootBinding.bgInclude.imageBg)
+    }
+
+    fun setBitmap(bitmap: Bitmap) {
+        Glide
+            .with(requireContext().applicationContext)
+            .load(bitmap)
+//            .placeholder(spinner)
+            .transition(DrawableTransitionOptions.withCrossFade())
+            .circleCrop()
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .error(R.drawable.none)
+            .into(binding.image)
+
+        Glide
+            .with(requireContext().applicationContext)
+            .load(bitmap)
+            .centerCrop()
+//            .placeholder(spinner)
+            .transition(DrawableTransitionOptions.withCrossFade())
+            .downsample(DownsampleStrategy.CENTER_INSIDE)
+            .override(200, 200)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .error(R.drawable.none)
+            .apply(RequestOptions.bitmapTransform(BlurTransformation(15, 1)))
+            .into(rootBinding.bgInclude.imageBg)
+    }
+
     fun loadData(data: MediaData) {
-        Glide.with(requireContext().applicationContext).clear(binding.image)
-        Glide.with(requireContext().applicationContext).clear(rootBinding.bgInclude.imageBg)
+//        Glide.with(requireContext().applicationContext).clear(binding.image)
+//        Glide.with(requireContext().applicationContext).clear(rootBinding.bgInclude.imageBg)
 
-        data.path.toBitmap?.also { bitmap ->
-            Glide
-                .with(requireContext().applicationContext)
-                .load(bitmap)
-//            .placeholder(spinner)
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .circleCrop()
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .error(R.drawable.none)
-                .into(binding.image)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val bitmap = data.path.toBitmap
 
-            Glide
-                .with(requireContext().applicationContext)
-                .load(bitmap)
-                .centerCrop()
-//            .placeholder(spinner)
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .downsample(DownsampleStrategy.CENTER_INSIDE)
-                .override(200, 200)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .error(R.drawable.none)
-                .apply(RequestOptions.bitmapTransform(BlurTransformation(15, 1)))
-                .into(rootBinding.bgInclude.imageBg)
-        } ?: run {
-            Glide
-                .with(requireContext().applicationContext)
-                .load(data.imageId)
-//            .placeholder(spinner)
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .circleCrop()
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .error(R.drawable.none)
-                .into(binding.image)
-
-            Glide
-                .with(requireContext().applicationContext)
-                .load(data.imageId)
-                .centerCrop()
-//            .placeholder(spinner)
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .downsample(DownsampleStrategy.CENTER_INSIDE)
-                .override(200, 200)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .error(R.drawable.none)
-                .apply(RequestOptions.bitmapTransform(BlurTransformation(15, 1)))
-                .into(rootBinding.bgInclude.imageBg)
+            lifecycleScope.launch {
+                if (bitmap != null) setBitmap(bitmap) else setImageResource(data)
+            }
         }
 
         binding.tv.text = data.name
