@@ -239,26 +239,50 @@ class SlidingContainer @JvmOverloads constructor(
         }
     }
 
+    private fun canGoUp(): Boolean {
+        val expectedPositionName = positionMap[yScreenIndex - 1][xScreenIndex].name
+        return viewMap[expectedPositionName] != null
+    }
+
+    private fun canGoDown(): Boolean {
+        val expectedPositionName = positionMap[yScreenIndex + 1][xScreenIndex].name
+        return viewMap[expectedPositionName] != null
+    }
+
+    private fun canGoRight(): Boolean {
+        val expectedPositionName = positionMap[yScreenIndex][xScreenIndex + 1].name
+        return viewMap[expectedPositionName] != null
+    }
+
+    private fun canGoLeft(): Boolean {
+        val expectedPositionName = positionMap[yScreenIndex][xScreenIndex - 1].name
+        return viewMap[expectedPositionName] != null
+    }
+
     private fun goUp() {
         if (yScreenIndex > 0) {
-            yScreenIndex--
+            if (canGoUp())
+                yScreenIndex--
         }
     }
 
     private fun goDown() {
         if (yScreenIndex < 2) {
+            if (canGoDown())
             yScreenIndex++
         }
     }
 
     private fun goRight() {
         if (xScreenIndex < 2) {
+            if (canGoRight())
             xScreenIndex++
         }
     }
 
     private fun goLeft() {
         if (xScreenIndex > 0) {
+            if (canGoLeft())
             xScreenIndex--
         }
     }
