@@ -4,7 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.text.format.DateUtils
 import android.widget.SeekBar
+import androidx.annotation.OptIn
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
@@ -22,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 
+@OptIn(UnstableApi::class)
 fun MainFragment.setupCenter(
     model: PlayerModel,
     binding: FragmentScreenMainBinding,
@@ -186,6 +189,10 @@ fun MainFragment.setupCenter(
 
     model.isFavorite.observe(requireActivity()) {
         setFavoriteResource(model.currentData.value!!.isFavorite)
+    }
+
+    model.fftChartMap.observe(requireActivity()) {
+        binding.fftView.map = it
     }
 
     binding.controls.b1.setOnClickListener {

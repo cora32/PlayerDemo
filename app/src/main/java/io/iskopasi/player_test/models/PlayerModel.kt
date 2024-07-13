@@ -4,13 +4,16 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.media3.common.util.UnstableApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.iskopasi.player_test.MediaFile
 import io.iskopasi.player_test.R
 import io.iskopasi.player_test.Repo
 import io.iskopasi.player_test.room.MediaDao
+import io.iskopasi.player_test.utils.FFTPlayer
 import io.iskopasi.player_test.utils.LoopIterator
 import io.iskopasi.player_test.utils.Utils.bg
+import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.utils.share
 import java.io.File
@@ -38,6 +41,7 @@ data class MediaData(
     }
 }
 
+@UnstableApi
 @HiltViewModel
 class PlayerModel @Inject constructor(
     context: Application,
@@ -69,12 +73,23 @@ class PlayerModel @Inject constructor(
     var currentProgress = MutableLiveData(0)
     var mediaList = MutableLiveData(listOf<MediaData>())
 
+    //    var fftChartData = MutableLiveData(listOf<Float>())
+    var fftChartMap = MutableLiveData(mutableMapOf<Int, Float>())
+
+    private val player by lazy {
+        FFTPlayer(context) { dataList, frequencyMap ->
+            ui {
+                fftChartMap.value = frequencyMap
+            }
+        }
+    }
+
     init {
         bg {
             val dataList = repo.read(getApplication()).toMediaData().sortedBy { it.subtitle }
             iter = LoopIterator(dataList)
             ui {
-                currentData.value = iter.value!!
+                setStates(iter.value!!)
                 mediaList.value = dataList
             }
         }
@@ -99,12 +114,15 @@ class PlayerModel @Inject constructor(
     }
 
     private fun setStates(data: MediaData?) {
+        "---> setStates".e
         previousData = currentData.value
         currentData.value = data
         currentActiveIndex.value = iter.index
 
         isFavorite.value = iter.value?.isFavorite
         currentProgress.value = (0..currentData.value!!.duration).random()
+
+        player.add(currentData.value!!.path)
     }
 
     fun setMedia(index: Int) {
@@ -121,22 +139,27 @@ class PlayerModel @Inject constructor(
 
     fun setSeekPosition(progress: Int) {
         currentProgress.value = progress
+        player.seekTo(progress)
     }
 
     fun start() {
         isPlaying.value = true
+        player.play()
     }
 
     fun pause() {
         isPlaying.value = false
+        player.pause()
     }
 
     fun shuffle() {
         isShuffling.value = !isShuffling.value!!
+        player.shuffle(isShuffling.value!!)
     }
 
     fun repeat() {
         isRepeating.value = !isRepeating.value!!
+        player.repeat(isRepeating.value!!)
     }
 
     fun favorite() {

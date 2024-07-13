@@ -49,7 +49,9 @@ class Repo @Inject constructor() {
 
                 val mFile = MediaFile(id++, albumId, path, name, album, artist, duration)
 
+//                if(path.contains("2020") || name.contains("2020") || album.contains("2020")) {
                 files.add(mFile)
+//                }
 
 //                "->> file: $mFile".e
             }
