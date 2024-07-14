@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.media3.common.util.UnstableApi
 import dagger.hilt.android.AndroidEntryPoint
 import io.iskopasi.player_test.R
 import io.iskopasi.player_test.databinding.FragmentLeftBinding
@@ -17,17 +18,14 @@ import io.iskopasi.player_test.models.PlayerModel
 import io.iskopasi.player_test.views.SlidingScreen
 import io.iskopasi.player_test.views.SlidingScreenPosition
 
+@UnstableApi
 @AndroidEntryPoint
 class MainFragment : Fragment() {
     private lateinit var binding: FragmentMainBinding
     private val centerBinding by lazy { binding.container.getBinding<FragmentScreenMainBinding>() }
     private val rightBinding by lazy { binding.container.getBinding<FragmentRightBinding>() }
+    private val leftBinding by lazy { binding.container.getBinding<FragmentLeftBinding>() }
     private val model: PlayerModel by viewModels()
-//    private val spinner by lazy {
-//        CircularProgressDrawable(this.requireContext().applicationContext).apply {
-//            setColorSchemeColors(R.color.bg1, R.color.trans_red)
-//        }
-//    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -68,5 +66,6 @@ class MainFragment : Fragment() {
 
         setupCenter(model, centerBinding, binding)
         setupRight(model, rightBinding, binding)
+        setupLeft(model, leftBinding, binding)
     }
 }

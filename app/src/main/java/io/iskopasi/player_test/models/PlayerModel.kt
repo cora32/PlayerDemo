@@ -72,15 +72,15 @@ class PlayerModel @Inject constructor(
     var currentActiveIndex = MutableLiveData(0)
     var currentProgress = MutableLiveData(0)
     var mediaList = MutableLiveData(listOf<MediaData>())
-
-    //    var fftChartData = MutableLiveData(listOf<Float>())
-//    var fftChartMap = MutableLiveData(mutableMapOf<Int, Float>())
     var fftChartData = MutableLiveData(FFTChartData())
 
     private val player by lazy {
-        FFTPlayer(context) { dataList, frequencyMap, maxAmplitude ->
-            ui {
-                fftChartData.value = FFTChartData(frequencyMap, maxAmplitude)
+        FFTPlayer(context) { dataList, frequencyMap, maxAmplitude, maxRawAmplitude ->
+            if (isPlaying.value == true) {
+                ui {
+                    fftChartData.value =
+                        FFTChartData(dataList, frequencyMap, maxAmplitude, maxRawAmplitude)
+                }
             }
         }
     }

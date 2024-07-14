@@ -21,4 +21,5 @@
     <color name="text_color_1_trans">#59EDEDED</color>
     <color name="text_color_1_trans2">#ABEDEDED</color>
     <color name="text_color_1_trans3">#DAEDEDED</color>
+    <color name="fft_bg">#413E3A3A</color>
 </resources>

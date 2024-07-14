@@ -3,28 +3,23 @@ package io.iskopasi.player_test.views
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.Path
 import android.util.AttributeSet
-import android.view.View
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.ColorUtils
 import io.iskopasi.player_test.R
-import io.iskopasi.player_test.utils.Utils.e
-import io.iskopasi.player_test.views.FFTView.Companion.FREQUENCY_BAND_LIMITS
 
 
 class SpectroView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : View(context, attrs, defStyleAttr) {
-    private var centerX = 0f
-    private var centerY = 0f
-    private var step = 0f
-    private val lineWidth = 2.dp.value
-    private val path = Path()
+) : FFTBaseView(context, attrs, defStyleAttr) {
+    companion object {
+        const val MAX_DISPLAYED_SAMPLES = 100
+    }
     private val paint by lazy {
         Paint().apply {
             style = Paint.Style.STROKE
@@ -35,28 +30,24 @@ class SpectroView @JvmOverloads constructor(
             textSize = 25.sp.value
         }
     }
-    private var maxAmplitude = 0f
-    private var yFactor = 0f
+    private var bg = ContextCompat.getColor(context, R.color.fft_bg)
+    private var centerX = 0f
+    private var centerY = 0f
+    private val lineWidth = 2.dp.value
     private var yStep = 0f
     private var columnWidth = 5.dp.value
-    private val accumData = mutableListOf<FFTChartData>()
-
-//    var data = FFTChartData()
-//        set(value) {
-//            maxAmplitude = value.maxAmplitude
-//            yFactor = centerY / maxAmplitude
-//
-//            if (value.map.isNotEmpty()) {
-//                step = width / value.map.size.toFloat()
-//
-//                invalidate()
-//            }
-//        }
+    private val dataQueue = mutableListOf<FFTChartData>()
 
     fun set(data: FFTChartData) {
         if (data.maxAmplitude > 0) {
-            accumData.add(data)
-            "--> set data: ${accumData.size}".e
+            // Remove last to keep only latest 10 arrays
+            if (dataQueue.size > MAX_DISPLAYED_SAMPLES) {
+                dataQueue.removeFirst()
+            }
+
+            dataQueue.add(data)
+
+            yStep = height / data.dataList.size.toFloat() * 2f
 
             invalidate()
         }
@@ -73,19 +64,31 @@ class SpectroView @JvmOverloads constructor(
         centerX = width / 2f
         centerY = height / 2f
 
-        yStep = (height / FREQUENCY_BAND_LIMITS.size).toFloat()
+        columnWidth = width / MAX_DISPLAYED_SAMPLES.toFloat()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
+        canvas.drawColor(bg)
+
+        if (dataQueue.size == 0) {
+            canvas.drawText(noDataText, centerX - textWidth / 2f, centerY, paintNoData)
+        } else {
+            drawSpector(canvas)
+        }
+        drawFrame(canvas)
+    }
+
+    private fun drawSpector(canvas: Canvas) {
         var xValue = 0f
-        accumData.forEach { data ->
-            val valueFactor = 255f / data.maxAmplitude
+
+        dataQueue.forEach { data ->
+            val valueFactor = 255f / data.maxRawAmplitude
             var yValue = height.toFloat()
 
-            data.map.onEach {
-                val amplitude = it.value * valueFactor
+            for (i in 0 until data.dataList.size / 2 step 2) {
+                val amplitude = data.dataList[i] * valueFactor
                 val newColor = ColorUtils.setAlphaComponent(paint.color, amplitude.toInt())
 
                 canvas.drawLine(xValue,
@@ -96,11 +99,10 @@ class SpectroView @JvmOverloads constructor(
                         color = newColor
                     })
 
-                yValue -= yStep
+                yValue -= yStep * 2
             }
 
             xValue += columnWidth
-
         }
     }
 }

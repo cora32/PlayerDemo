@@ -2,26 +2,31 @@ package io.iskopasi.player_test.views
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Rect
+import android.graphics.Shader
 import android.util.AttributeSet
-import android.view.View
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import io.iskopasi.player_test.R
 
 
 data class FFTChartData(
+    val dataList: List<Float> = listOf<Float>(),
     val map: MutableMap<Int, Float> = mutableMapOf(),
-    val maxAmplitude: Float = 0f
+    val maxAmplitude: Float = 0f,
+    val maxRawAmplitude: Float = 0f,
 )
 
 class FFTView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : View(context, attrs, defStyleAttr) {
+) : FFTBaseView(context, attrs, defStyleAttr) {
     companion object {
         // Taken from: https://en.wikipedia.org/wiki/Preferred_number#Audio_frequencies
         val FREQUENCY_BAND_LIMITS = arrayOf(
@@ -31,32 +36,72 @@ class FFTView @JvmOverloads constructor(
         )
     }
 
-    private var centerX = 0f
-    private var centerY = 0f
-    private var step = 0f
-    private val lineWidth = 2.dp.value
-    private val path = Path()
-    private val paint by lazy {
+    private val gradient by lazy {
+        LinearGradient(
+            0f, 0f, 0f, (height - 100.dp.value).toFloat(),
+            ContextCompat.getColor(context, R.color.fft_bg),
+            ContextCompat.getColor(context, R.color.trans), Shader.TileMode.CLAMP
+        )
+    }
+    private val bgPaint by lazy {
         Paint().apply {
-            style = Paint.Style.STROKE
-            color = ResourcesCompat.getColor(resources, R.color.text_color_1_trans, null)
+            style = Paint.Style.FILL
+//            color = ResourcesCompat.getColor(resources, R.color.fft_bg, null)
             strokeCap = Paint.Cap.ROUND
             strokeWidth = lineWidth
             isAntiAlias = true
             textSize = 25.sp.value
+            isDither = true
+            shader = gradient
+            isAntiAlias = true
         }
     }
+    private val paint by lazy {
+        Paint().apply {
+            style = Paint.Style.STROKE
+            color = ResourcesCompat.getColor(resources, R.color.text_color_1, null)
+            strokeCap = Paint.Cap.ROUND
+            strokeWidth = lineWidth
+            isAntiAlias = true
+            textSize = 25.sp.value
+            isDither = true
+            isAntiAlias = true
+        }
+    }
+    private val barPaint by lazy {
+        Paint().apply {
+            style = Paint.Style.STROKE
+            color = ResourcesCompat.getColor(resources, R.color.text_color_1, null)
+            strokeCap = Paint.Cap.ROUND
+            strokeWidth = barWidth
+            isAntiAlias = true
+            textSize = 25.sp.value
+            isDither = true
+            isAntiAlias = true
+        }
+    }
+    private var centerX = 0f
+    private var centerY = 0f
+    private var step = 0f
+    private val lineWidth = 2.dp.value
+    private val lOffset = 5.dp.value
+    private val path = Path()
     private var maxAmplitude = 0f
     private var yFactor = 0f
+    private var barWidth = 20.dp.value
+    private val labelOffset = 10.dp.value
+    private val xPadding = 60.dp.value
+    private val yPadding = 120.dp.value
+    private val bgRect = Rect(0, 0, 0, 0)
+
     var data = FFTChartData()
         set(value) {
             field = value
 
-            maxAmplitude = value.maxAmplitude
-            yFactor = centerY / maxAmplitude
-
             if (value.map.isNotEmpty()) {
-                step = width / value.map.size.toFloat()
+                maxAmplitude = value.maxAmplitude
+                yFactor = (height - yPadding * 1.2f) / maxAmplitude
+                step = (width - xPadding) / value.map.size.toFloat()
 
                 invalidate()
             }
@@ -72,31 +117,94 @@ class FFTView @JvmOverloads constructor(
 
         centerX = width / 2f
         centerY = height / 2f
+
+        frameRect.bottom = (height - labelOffset).toInt()
+        bgRect.apply {
+            left = 0
+            top = 0
+            right = width
+            bottom = height
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        canvas.drawRect(bgRect, bgPaint)
 
-        path.reset()
-        path.moveTo(0f, centerY)
+        if (data.map.isEmpty()) {
+            canvas.drawText(
+                noDataText,
+                centerX - textWidth / 2f,
+                centerY - labelOffset * 3,
+                paintNoData
+            )
+        } else {
+//        drawFrequencies(canvas)
+            drawBars(canvas)
+        }
+        drawFrame(canvas)
+    }
 
-        var xValue = 0f
+    override fun drawFrame(canvas: Canvas) {
+        canvas.drawLine(
+            0f, 0f, 0f,
+            height.toFloat() - yPadding, paint
+        )
+        canvas.drawLine(0f, 0f, width.toFloat(), 0f, paint)
+        canvas.drawLine(
+            width.toFloat(), 0f,
+            width.toFloat(),
+            height.toFloat() - yPadding,
+            paint
+        )
+    }
+
+    private fun drawBars(canvas: Canvas) {
+        var xValue = step
         data.map.onEachIndexed { i, entry ->
             val frequency = entry.key
             val value = entry.value
+            val amplitude = height - yPadding - value * yFactor
 
+            canvas.drawLine(xValue, amplitude, xValue, height.toFloat() - yPadding, barPaint)
+
+            if (i % 5 == 0 || i == FREQUENCY_BAND_LIMITS.size - 1) {
+                val text = "$frequency"
+                val tY = height - yPadding + labelOffset * 3
+                val textY = tY + lOffset * 5f
+
+                canvas.rotate(45f, xValue, textY)
+                canvas.drawText(text, xValue, textY, paint)
+                canvas.rotate(-45f, xValue, textY)
+                canvas.drawLine(xValue, tY - lOffset, xValue, tY + lOffset, paint)
+            }
+
+            xValue += step
+        }
+    }
+
+    private fun drawFrequencies(canvas: Canvas) {
+        path.reset()
+        path.moveTo(0f, centerY)
+
+        var xValue = step
+        data.map.onEachIndexed { i, entry ->
+            val frequency = entry.key
+            val value = entry.value
             val amplitude = centerY - value * yFactor
+
             path.lineTo(xValue, amplitude)
 
             if (i % 5 == 0 || i == FREQUENCY_BAND_LIMITS.size - 1) {
                 val text = "$frequency"
                 val textWidth = paint.measureText(text)
-                val tX = xValue - textWidth / 2f
-                val tY = centerY + 100
+                val tX = xValue
+                val tY = centerY + labelOffset * 3
 
-                canvas.rotate(45f, tX, tY)
-                canvas.drawText(text, tX, tY, paint)
-                canvas.rotate(-45f, tX, tY)
+                canvas.rotate(45f, tX, tY + lOffset)
+                canvas.drawText(text, tX, tY + lOffset * 10, paint)
+                canvas.rotate(-45f, tX, tY + lOffset)
+                canvas.drawLine(xValue, tY - lOffset, xValue, tY + lOffset, paint)
             }
 
             xValue += step

@@ -191,11 +191,6 @@ fun MainFragment.setupCenter(
         setFavoriteResource(model.currentData.value!!.isFavorite)
     }
 
-    model.fftChartData.observe(requireActivity()) {
-        binding.fftView.data = it
-        binding.spectroView.set(it)
-    }
-
     binding.controls.b1.setOnClickListener {
         model.repeat()
     }

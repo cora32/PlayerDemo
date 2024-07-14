@@ -29,12 +29,18 @@ import kotlin.math.sqrt
 
 
 @UnstableApi
-class FFTPlayer(context: Context, listener: (List<Float>, MutableMap<Int, Float>, Float) -> Unit) {
+class FFTPlayer(
+    context: Context, listener: (
+        List<Float>,
+        MutableMap<Int, Float>,
+        Float,
+        Float
+    ) -> Unit
+) {
     companion object {
         const val SAMPLE_SIZE = 4096
     }
 
-    //    private val fftAudioProcessor = FFTAudioProcessor()
     private val bufferSink by lazy {
         object : AudioBufferSink {
             private var sampleRateHz = 0
@@ -88,7 +94,7 @@ class FFTPlayer(context: Context, listener: (List<Float>, MutableMap<Int, Float>
                 val dst = FloatArray(SAMPLE_SIZE + 2) { 0f } //real output length equals src+2
 
                 val maxLimit = min(buffer.limit(), SAMPLE_SIZE)
-                "--> limit: ${buffer.limit()} size: ${buffer.array().size}; maxLimit: $maxLimit".e
+//                "--> limit: ${buffer.limit()} size: ${buffer.array().size}; maxLimit: $maxLimit".e
                 for (i in 0 until maxLimit step 2) {
                     val byte = buffer.getShort(i)
 
@@ -111,7 +117,8 @@ class FFTPlayer(context: Context, listener: (List<Float>, MutableMap<Int, Float>
                 val size = SAMPLE_SIZE / 2
                 var startIndex = 0
                 val frequencyMap = mutableMapOf<Int, Float>()
-                var maxAmplitude = 0f
+                var maxAvgAmplitude = 0f
+                var maxRawAmplitude = 0f
 
                 // Group amplitude by frequency
                 for (frequency in FREQUENCY_BAND_LIMITS) {
@@ -119,7 +126,12 @@ class FFTPlayer(context: Context, listener: (List<Float>, MutableMap<Int, Float>
 
                     var accum = 0f
                     for (i in startIndex until endIndex) {
-                        accum += chartData[i]
+                        val amplitude = chartData[i]
+                        accum += amplitude
+
+                        if (amplitude > maxRawAmplitude) {
+                            maxRawAmplitude = amplitude
+                        }
                     }
 
                     val amplitude = if (endIndex - startIndex == 0)
@@ -129,17 +141,18 @@ class FFTPlayer(context: Context, listener: (List<Float>, MutableMap<Int, Float>
 
                     frequencyMap[frequency] = amplitude
 
-                    if (amplitude > maxAmplitude) {
-                        maxAmplitude = amplitude
+                    if (amplitude > maxAvgAmplitude) {
+                        maxAvgAmplitude = amplitude
                     }
 
                     startIndex = endIndex
                 }
 
-                listener.invoke(chartData, frequencyMap, maxAmplitude)
+                listener.invoke(chartData, frequencyMap, maxAvgAmplitude, maxRawAmplitude)
             }
         }
     }
+
     private val rendererFactory = object : DefaultRenderersFactory(context) {
         override fun buildAudioRenderers(
             context: Context,
