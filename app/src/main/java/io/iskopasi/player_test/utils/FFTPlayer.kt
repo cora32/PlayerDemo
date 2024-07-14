@@ -29,7 +29,7 @@ import kotlin.math.sqrt
 
 
 @UnstableApi
-class FFTPlayer(context: Context, listener: (List<Float>, MutableMap<Int, Float>) -> Unit) {
+class FFTPlayer(context: Context, listener: (List<Float>, MutableMap<Int, Float>, Float) -> Unit) {
     companion object {
         const val SAMPLE_SIZE = 4096
     }
@@ -111,27 +111,32 @@ class FFTPlayer(context: Context, listener: (List<Float>, MutableMap<Int, Float>
                 val size = SAMPLE_SIZE / 2
                 var startIndex = 0
                 val frequencyMap = mutableMapOf<Int, Float>()
+                var maxAmplitude = 0f
 
                 // Group amplitude by frequency
                 for (frequency in FREQUENCY_BAND_LIMITS) {
-                    val endIndex = floor(frequency / 20_000.toFloat() * size).toInt()
+                    val endIndex = floor(frequency / 20000f * size).toInt()
 
                     var accum = 0f
                     for (i in startIndex until endIndex) {
                         accum += chartData[i]
                     }
 
-                    if (endIndex - startIndex > 0) {
-                        frequencyMap[frequency] = accum / (endIndex - startIndex).toFloat()
-                    } else {
-                        frequencyMap[frequency] = 0f
+                    val amplitude = if (endIndex - startIndex == 0)
+                        0f
+                    else
+                        accum / (endIndex - startIndex).toFloat()
+
+                    frequencyMap[frequency] = amplitude
+
+                    if (amplitude > maxAmplitude) {
+                        maxAmplitude = amplitude
                     }
+
                     startIndex = endIndex
                 }
 
-
-                "---> frequencyMap: ${frequencyMap}".e
-                listener.invoke(chartData, frequencyMap)
+                listener.invoke(chartData, frequencyMap, maxAmplitude)
             }
         }
     }

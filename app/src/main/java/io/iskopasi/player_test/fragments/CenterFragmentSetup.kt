@@ -191,8 +191,9 @@ fun MainFragment.setupCenter(
         setFavoriteResource(model.currentData.value!!.isFavorite)
     }
 
-    model.fftChartMap.observe(requireActivity()) {
-        binding.fftView.map = it
+    model.fftChartData.observe(requireActivity()) {
+        binding.fftView.data = it
+        binding.spectroView.set(it)
     }
 
     binding.controls.b1.setOnClickListener {

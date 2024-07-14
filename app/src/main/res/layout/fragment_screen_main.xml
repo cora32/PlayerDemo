@@ -130,6 +130,17 @@
     <io.iskopasi.player_test.views.FFTView
         android:id="@+id/fft_view"
         android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/black"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintVertical_bias="0.5" />
+
+    <io.iskopasi.player_test.views.SpectroView
+        android:id="@+id/spectro_view"
+        android:layout_width="0dp"
         android:layout_height="600dp"
         android:background="@color/black"
         app:layout_constraintBottom_toBottomOf="parent"

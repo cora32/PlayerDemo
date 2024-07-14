@@ -10,8 +10,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.res.ResourcesCompat
 import io.iskopasi.player_test.R
-import io.iskopasi.player_test.utils.Utils.e
 
+
+data class FFTChartData(
+    val map: MutableMap<Int, Float> = mutableMapOf(),
+    val maxAmplitude: Float = 0f
+)
 
 class FFTView @JvmOverloads constructor(
     context: Context,
@@ -21,7 +25,7 @@ class FFTView @JvmOverloads constructor(
     companion object {
         // Taken from: https://en.wikipedia.org/wiki/Preferred_number#Audio_frequencies
         val FREQUENCY_BAND_LIMITS = arrayOf(
-            20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630,
+            20, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630,
             800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000,
             12500, 16000, 20000
         )
@@ -42,27 +46,18 @@ class FFTView @JvmOverloads constructor(
             textSize = 25.sp.value
         }
     }
-    var data = listOf<Float>()
+    private var maxAmplitude = 0f
+    private var yFactor = 0f
+    var data = FFTChartData()
         set(value) {
             field = value
 
-            "---> Setting size to value.size: ${value.size}".e
-            if (value.isNotEmpty()) {
-                step = width / value.size.toFloat()
+            maxAmplitude = value.maxAmplitude
+            yFactor = centerY / maxAmplitude
 
-                "---> step: $step".e
-                invalidate()
-            }
-        }
-    var map = mutableMapOf<Int, Float>()
-        set(value) {
-            field = value
+            if (value.map.isNotEmpty()) {
+                step = width / value.map.size.toFloat()
 
-            "---> Setting size to value.size: ${value.size}".e
-            if (value.isNotEmpty()) {
-                step = width / value.size.toFloat()
-
-                "---> step: $step".e
                 invalidate()
             }
         }
@@ -83,19 +78,26 @@ class FFTView @JvmOverloads constructor(
         super.onDraw(canvas)
 
         path.reset()
+        path.moveTo(0f, centerY)
 
         var xValue = 0f
-        map.forEach { (frequency, value) ->
-            path.lineTo(xValue, centerY - value / 1000)
+        data.map.onEachIndexed { i, entry ->
+            val frequency = entry.key
+            val value = entry.value
 
-            val text = "$frequency"
-            val textWidth = paint.measureText(text)
-            val tX = xValue - textWidth / 2f
-            val tY = centerY + 100
+            val amplitude = centerY - value * yFactor
+            path.lineTo(xValue, amplitude)
 
-            canvas.rotate(45f, tX, tY)
-            canvas.drawText(text, tX, tY, paint)
-            canvas.rotate(-45f, tX, tY)
+            if (i % 5 == 0 || i == FREQUENCY_BAND_LIMITS.size - 1) {
+                val text = "$frequency"
+                val textWidth = paint.measureText(text)
+                val tX = xValue - textWidth / 2f
+                val tY = centerY + 100
+
+                canvas.rotate(45f, tX, tY)
+                canvas.drawText(text, tX, tY, paint)
+                canvas.rotate(-45f, tX, tY)
+            }
 
             xValue += step
         }

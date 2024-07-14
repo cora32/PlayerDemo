@@ -13,9 +13,9 @@ import io.iskopasi.player_test.room.MediaDao
 import io.iskopasi.player_test.utils.FFTPlayer
 import io.iskopasi.player_test.utils.LoopIterator
 import io.iskopasi.player_test.utils.Utils.bg
-import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.utils.share
+import io.iskopasi.player_test.views.FFTChartData
 import java.io.File
 import javax.inject.Inject
 
@@ -74,12 +74,13 @@ class PlayerModel @Inject constructor(
     var mediaList = MutableLiveData(listOf<MediaData>())
 
     //    var fftChartData = MutableLiveData(listOf<Float>())
-    var fftChartMap = MutableLiveData(mutableMapOf<Int, Float>())
+//    var fftChartMap = MutableLiveData(mutableMapOf<Int, Float>())
+    var fftChartData = MutableLiveData(FFTChartData())
 
     private val player by lazy {
-        FFTPlayer(context) { dataList, frequencyMap ->
+        FFTPlayer(context) { dataList, frequencyMap, maxAmplitude ->
             ui {
-                fftChartMap.value = frequencyMap
+                fftChartData.value = FFTChartData(frequencyMap, maxAmplitude)
             }
         }
     }
@@ -114,7 +115,6 @@ class PlayerModel @Inject constructor(
     }
 
     private fun setStates(data: MediaData?) {
-        "---> setStates".e
         previousData = currentData.value
         currentData.value = data
         currentActiveIndex.value = iter.index
