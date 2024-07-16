@@ -1,6 +1,7 @@
 package io.iskopasi.player_test.views
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
@@ -18,8 +19,10 @@ import io.iskopasi.player_test.R
 data class FFTChartData(
     val dataList: List<Float> = listOf<Float>(),
     val map: MutableMap<Int, Float> = mutableMapOf(),
+    val fullSpectrumMap: MutableMap<Int, List<Float>> = mutableMapOf(),
     val maxAmplitude: Float = 0f,
     val maxRawAmplitude: Float = 0f,
+    val bitmap: Bitmap? = null,
 )
 
 class FFTView @JvmOverloads constructor(

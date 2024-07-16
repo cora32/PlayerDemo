@@ -1,6 +1,7 @@
 package io.iskopasi.player_test.utils
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.Handler
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -30,23 +31,38 @@ import kotlin.math.sqrt
 
 @UnstableApi
 class FFTPlayer(
-    context: Context, listener: (
+    context: Context,
+    onHandleBuffer: (
         List<Float>,
         MutableMap<Int, Float>,
         Float,
         Float
+    ) -> Unit,
+    onFullSpectrumReady: (
+        Bitmap,
+        Float,
     ) -> Unit
 ) {
     companion object {
+        const val SAMPLE_SIZE_KB = 1024
         const val SAMPLE_SIZE = 4096
     }
 
+    private val player by lazy {
+        ExoPlayer.Builder(context)
+            .setRenderersFactory(rendererFactory)
+            .build()
+    }
+    private val extractor by lazy {
+        FullSampleExtractor(onFullSpectrumReady)
+    }
     private val bufferSink by lazy {
         object : AudioBufferSink {
             private var sampleRateHz = 0
             private var channelCount = 0
             private var encoding = 0
             private val noise = Noise.real(SAMPLE_SIZE)
+            private var fftBuffer = EMPTY_BUFFER
 
             override fun flush(sampleRateHz: Int, channelCount: Int, encoding: Int) {
                 this.sampleRateHz = sampleRateHz
@@ -57,8 +73,6 @@ class FFTPlayer(
             }
 
             override fun handleBuffer(buffer: ByteBuffer) {
-                var fftBuffer = EMPTY_BUFFER
-
                 val limit = buffer.limit()
                 val frameCount = (limit - buffer.position()) / (2 * channelCount)
                 val singleChannelOutputSize = frameCount * 2
@@ -84,9 +98,7 @@ class FFTPlayer(
                     fftBuffer.putShort((sum / channelCount).toShort())
                 }
 
-                bg {
-                    processFFT(fftBuffer)
-                }
+                processFFT(fftBuffer)
             }
 
             private fun processFFT(buffer: ByteBuffer) {
@@ -94,11 +106,10 @@ class FFTPlayer(
                 val dst = FloatArray(SAMPLE_SIZE + 2) { 0f } //real output length equals src+2
 
                 val maxLimit = min(buffer.limit(), SAMPLE_SIZE)
-//                "--> limit: ${buffer.limit()} size: ${buffer.array().size}; maxLimit: $maxLimit".e
                 for (i in 0 until maxLimit step 2) {
-                    val byte = buffer.getShort(i)
+                    val short = buffer.getShort(i)
 
-                    src[i] = byte.toFloat()
+                    src[i] = short.toFloat()
                 }
 
                 // DC bin is located at index 0, 1, nyquist at index n-2, n-1
@@ -148,57 +159,54 @@ class FFTPlayer(
                     startIndex = endIndex
                 }
 
-                listener.invoke(chartData, frequencyMap, maxAvgAmplitude, maxRawAmplitude)
+                onHandleBuffer.invoke(chartData, frequencyMap, maxAvgAmplitude, maxRawAmplitude)
             }
         }
     }
 
-    private val rendererFactory = object : DefaultRenderersFactory(context) {
-        override fun buildAudioRenderers(
-            context: Context,
-            extensionRendererMode: Int,
-            mediaCodecSelector: MediaCodecSelector,
-            enableDecoderFallback: Boolean,
-            audioSink: AudioSink,
-            eventHandler: Handler,
-            eventListener: AudioRendererEventListener,
-            out: ArrayList<Renderer>
-        ) {
+    private val rendererFactory by lazy {
+        object : DefaultRenderersFactory(context) {
+            override fun buildAudioRenderers(
+                context: Context,
+                extensionRendererMode: Int,
+                mediaCodecSelector: MediaCodecSelector,
+                enableDecoderFallback: Boolean,
+                audioSink: AudioSink,
+                eventHandler: Handler,
+                eventListener: AudioRendererEventListener,
+                out: ArrayList<Renderer>
+            ) {
 //            val sink = DefaultAudioSink.Builder(context)
 //                .setAudioProcessors(arrayOf(fftAudioProcessor))
 //                .build()
 
-            val sink2 = DefaultAudioSink.Builder(context)
-                .setAudioProcessors(arrayOf(TeeAudioProcessor(bufferSink)))
-                .build()
+                val sink2 = DefaultAudioSink.Builder(context)
+                    .setAudioProcessors(arrayOf(TeeAudioProcessor(bufferSink)))
+                    .build()
 
-            out.add(
-                MediaCodecAudioRenderer(
+                out.add(
+                    MediaCodecAudioRenderer(
+                        context,
+                        mediaCodecSelector,
+                        enableDecoderFallback,
+                        eventHandler,
+                        eventListener,
+                        sink2
+                    )
+                )
+
+                super.buildAudioRenderers(
                     context,
+                    extensionRendererMode,
                     mediaCodecSelector,
                     enableDecoderFallback,
+                    audioSink,
                     eventHandler,
                     eventListener,
-                    sink2
+                    out
                 )
-            )
-
-            super.buildAudioRenderers(
-                context,
-                extensionRendererMode,
-                mediaCodecSelector,
-                enableDecoderFallback,
-                audioSink,
-                eventHandler,
-                eventListener,
-                out
-            )
+            }
         }
-    }
-    private val player by lazy {
-        ExoPlayer.Builder(context)
-            .setRenderersFactory(rendererFactory)
-            .build()
     }
 
     init {
@@ -227,5 +235,9 @@ class FFTPlayer(
 
     fun seekTo(progress: Int) {
         player.seekTo(progress.toLong())
+    }
+
+    fun requestFullSpectrum(path: String, color: Int) = bg {
+        extractor.extract(path, color)
     }
 }

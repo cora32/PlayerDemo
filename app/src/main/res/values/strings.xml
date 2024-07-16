@@ -14,7 +14,7 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="media_list">Media</string>
     <string name="stats_list">Stats</string>
-    <string name="freqs">Frequencies</string>
+    <string name="freqs">Frequencies (Hz)</string>
     <string name="spectrogram">Spectrogram</string>
     <string name="play">Play</string>
     <string name="info">Info</string>

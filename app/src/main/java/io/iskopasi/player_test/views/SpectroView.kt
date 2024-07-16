@@ -1,8 +1,10 @@
 package io.iskopasi.player_test.views
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.RectF
 import android.util.AttributeSet
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,21 +37,18 @@ class SpectroView @JvmOverloads constructor(
     private var centerY = 0f
     private val lineWidth = 2.dp.value
     private var yStep = 0f
+    private var resizeRect = RectF()
     private var columnWidth = 5.dp.value
     private val dataQueue = mutableListOf<FFTChartData>()
+    private var bitmap: Bitmap? = null
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     fun set(data: FFTChartData) {
-        if (data.maxAmplitude > 0) {
-            // Remove last to keep only latest 10 arrays
-            if (dataQueue.size > MAX_DISPLAYED_SAMPLES) {
-                dataQueue.removeFirst()
-            }
-
-            dataQueue.add(data)
-
-            yStep = height / data.dataList.size.toFloat() * 2f
-
-            invalidate()
+        data.bitmap?.let {
+            bitmap = data.bitmap
         }
     }
 
@@ -65,22 +64,26 @@ class SpectroView @JvmOverloads constructor(
         centerY = height / 2f
 
         columnWidth = width / MAX_DISPLAYED_SAMPLES.toFloat()
+        resizeRect.apply {
+            left = 0f
+            top = 0f
+            right = width.toFloat()
+            bottom = height.toFloat()
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-
         canvas.drawColor(bg)
 
-        if (dataQueue.size == 0) {
-            canvas.drawText(noDataText, centerX - textWidth / 2f, centerY, paintNoData)
-        } else {
-            drawSpector(canvas)
+        bitmap?.let {
+            canvas.drawBitmap(it, null, resizeRect, null)
+            it.recycle()
         }
+
         drawFrame(canvas)
     }
 
-    private fun drawSpector(canvas: Canvas) {
+    private fun drawSpectrum(canvas: Canvas) {
         var xValue = 0f
 
         dataQueue.forEach { data ->

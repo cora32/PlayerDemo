@@ -15,6 +15,8 @@ fun MainFragment.setupLeft(
 ) {
     model.fftChartData.observe(requireActivity()) {
         binding.fftView.data = it
+    }
+    model.spectrumChartData.observe(requireActivity()) {
         binding.spectroView.set(it)
     }
 }

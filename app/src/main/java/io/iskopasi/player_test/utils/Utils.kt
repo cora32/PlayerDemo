@@ -102,7 +102,7 @@ object Utils {
 data class ColorsData(val vibrant: Int, val darkVibrant: Int)
 
 fun getImageBitmap(path: String): Bitmap? = MediaMetadataRetriever().run {
-    "---> path: $path".e
+    "---> bitmappath: $path".e
 
     if (path.isEmpty()) return null
 

@@ -2,6 +2,7 @@ package io.iskopasi.player_test.models
 
 import android.app.Application
 import android.content.Context
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.media3.common.util.UnstableApi
@@ -13,6 +14,7 @@ import io.iskopasi.player_test.room.MediaDao
 import io.iskopasi.player_test.utils.FFTPlayer
 import io.iskopasi.player_test.utils.LoopIterator
 import io.iskopasi.player_test.utils.Utils.bg
+import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.utils.share
 import io.iskopasi.player_test.views.FFTChartData
@@ -63,8 +65,8 @@ class PlayerModel @Inject constructor(
         R.drawable.i10,
     )
     private lateinit var iter: LoopIterator<MediaData>
+    private var previousData: MediaData? = null
     var currentData: MutableLiveData<MediaData?> = MutableLiveData(MediaData.empty)
-    var previousData: MediaData? = null
     var isPlaying = MutableLiveData(false)
     var isShuffling = MutableLiveData(false)
     var isRepeating = MutableLiveData(false)
@@ -73,22 +75,43 @@ class PlayerModel @Inject constructor(
     var currentProgress = MutableLiveData(0)
     var mediaList = MutableLiveData(listOf<MediaData>())
     var fftChartData = MutableLiveData(FFTChartData())
+    var spectrumChartData = MutableLiveData(FFTChartData())
+    private val baseColor = ContextCompat.getColor(getApplication(), R.color.text_color_1_trans3)
 
     private val player by lazy {
-        FFTPlayer(context) { dataList, frequencyMap, maxAmplitude, maxRawAmplitude ->
-            if (isPlaying.value == true) {
-                ui {
-                    fftChartData.value =
-                        FFTChartData(dataList, frequencyMap, maxAmplitude, maxRawAmplitude)
+        FFTPlayer(
+            context,
+            onHandleBuffer = { dataList, frequencyMap, maxAmplitude, maxRawAmplitude ->
+                if (isPlaying.value == true) {
+                    ui {
+                        fftChartData.value =
+                            FFTChartData(
+                                dataList,
+                                frequencyMap,
+                                fullSpectrumMap = mutableMapOf(),
+                                maxAmplitude,
+                                maxRawAmplitude
+                            )
+                    }
                 }
-            }
-        }
+            },
+            onFullSpectrumReady = { bitmap, maxRawAmplitude ->
+                "--> Bitmap: ${bitmap.byteCount}; maxRawAmplitude: $maxRawAmplitude".e
+                ui {
+                    spectrumChartData.value =
+                        FFTChartData(
+                            bitmap = bitmap,
+                            maxRawAmplitude = maxRawAmplitude
+                        )
+                }
+            })
     }
 
     init {
         bg {
             val dataList = repo.read(getApplication()).toMediaData().sortedBy { it.subtitle }
             iter = LoopIterator(dataList)
+
             ui {
                 setStates(iter.value!!)
                 mediaList.value = dataList
@@ -115,6 +138,10 @@ class PlayerModel @Inject constructor(
     }
 
     private fun setStates(data: MediaData?) {
+        if (data == null || data.path.isEmpty()) {
+            return
+        }
+
         previousData = currentData.value
         currentData.value = data
         currentActiveIndex.value = iter.index
@@ -145,6 +172,7 @@ class PlayerModel @Inject constructor(
     fun start() {
         isPlaying.value = true
         player.play()
+        player.requestFullSpectrum(currentData.value!!.path, baseColor)
     }
 
     fun pause() {
