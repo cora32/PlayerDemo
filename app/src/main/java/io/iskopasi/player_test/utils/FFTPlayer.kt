@@ -47,10 +47,19 @@ class FFTPlayer(
         const val SAMPLE_SIZE = 4096
     }
 
+    private val listener by lazy {
+        object : Player.Listener {
+            override fun onEvents(player: Player, events: Player.Events) {
+                super.onEvents(player, events)
+
+                "--> events: ${events}".e
+            }
+        }
+    }
     private val player by lazy {
         ExoPlayer.Builder(context)
             .setRenderersFactory(rendererFactory)
-            .build()
+            .build().apply { addListener(listener) }
     }
     private val extractor by lazy {
         FullSampleExtractor(onFullSpectrumReady)
@@ -237,6 +246,6 @@ class FFTPlayer(
     }
 
     fun requestFullSpectrum(path: String, color: Int) = bg {
-        extractor.extract(path, color)
+        extractor.extractJNI(path, color)
     }
 }

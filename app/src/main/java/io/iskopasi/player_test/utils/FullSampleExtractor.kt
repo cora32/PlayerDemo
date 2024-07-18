@@ -1,13 +1,16 @@
 package io.iskopasi.player_test.utils
 
 import android.graphics.Bitmap
+import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import android.util.Log
 import androidx.core.graphics.ColorUtils
 import androidx.media3.common.util.UnstableApi
 import com.paramsen.noise.Noise
 import io.iskopasi.player_test.utils.FFTPlayer.Companion.SAMPLE_SIZE
 import io.iskopasi.player_test.utils.Utils.e
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.pow
@@ -18,47 +21,220 @@ import kotlin.math.sqrt
 class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap, Float) -> Unit) {
     companion object {
         const val BUFFER_SIZE = 1024 * 32
+        const val TAG = "FullSampleExtractor"
 
         init {
             System.loadLibrary("player_test")
         }
     }
 
-    private val extractor by lazy { MediaExtractor() }
+    //    private val extractor by lazy { MediaExtractor() }
     private var mFormat: MediaFormat? = null
     private var sampleSize: Int = 0
     private var maxAmplitude = 0f
     private val noise = Noise.real(SAMPLE_SIZE)
 
 
-    private external fun fft(
+    fun extract(path: String, baseColor: Int) {
+        "--> mFormat: ${mFormat.toString()}".e
+
+//        for (i in 0 until extractor.trackCount) {
+//            "formats: $i ${extractor.getTrackFormat(i)}".e
+//        }
+
+        val resultList = mutableListOf<List<Float>>()
+
+        // Copy all music data to buffer
+        val data = getAllBytes(path)
+        val bufferAll = data.first
+        val size = data.second
+
+        bufferAll.order(ByteOrder.nativeOrder())
+        bufferAll.rewind()
+        val sampleList = getSamples(bufferAll)
+        val bitmap = getBitmap(sampleList, baseColor)
+        onFullSpectrumReady.invoke(bitmap, maxAmplitude)
+    }
+
+    fun extractJNI(path: String, baseColor: Int) {
+        maxAmplitude = 0f
+
+        MediaExtractor().apply {
+            setDataSource(path)
+            mFormat = getTrackFormat(0)
+            selectTrack(0)
+            "---> Decoding...".e
+            val decoded = decodeToMemory(path, true)
+            release()
+
+            "---> Decoding complete.".e
+            val size = decoded.size * 2L
+            val bufferDecodedData =
+                ByteBuffer.allocateDirect(size.toInt()).order(ByteOrder.nativeOrder())
+            for (short in decoded) {
+                bufferDecodedData.putShort(short)
+            }
+            val bitmap = getSpectrumFromDecoded(bufferDecodedData, baseColor, size)
+
+            onFullSpectrumReady.invoke(bitmap, maxAmplitude)
+        }
+
+    }
+
+    private external fun getWavSpectrum(
         extractor: MediaExtractor,
         buffer: ByteBuffer,
-        base_color: Int
+        baseColor: Int,
+        fileSize: Long
     ): Bitmap
 
-    private fun getAllBytes(): ByteBuffer {
+    private external fun getSpectrumFromDecoded(
+        buffer: ByteBuffer,
+        baseColor: Int,
+        fileSize: Long
+    ): Bitmap
+
+    //
+    // Copied from https://android.googlesource.com/platform/cts/+/jb-mr2-release/tests/tests/media/src/android/media/cts/DecoderTest.java
+    //
+    @Throws(IOException::class)
+    private fun decodeToMemory(path: String, reconfigure: Boolean): ShortArray {
+        var reconfigure = reconfigure
+        var decoded = ShortArray(0)
+        var decodedIdx = 0
+        val codec: MediaCodec
+        var codecInputBuffers: Array<ByteBuffer?>
+        var codecOutputBuffers: Array<ByteBuffer>
+        val extractor = MediaExtractor()
+        extractor.setDataSource(path)
+        // assertEquals("wrong number of tracks", 1, extractor.trackCount)
+        val format = extractor.getTrackFormat(0)
+        val mime = format.getString(MediaFormat.KEY_MIME)
+        // assertTrue("not an audio file", mime!!.startsWith("audio/"))
+
+        codec = MediaCodec.createDecoderByType(mime!!)
+        codec.configure(format, null,  /* surface */null,  /* crypto */0 /* flags */)
+        codec.start()
+        codecInputBuffers = codec.inputBuffers
+        codecOutputBuffers = codec.outputBuffers
+        if (reconfigure) {
+            codec.stop()
+            codec.configure(format, null,  /* surface */null,  /* crypto */0 /* flags */)
+            codec.start()
+            codecInputBuffers = codec.inputBuffers
+            codecOutputBuffers = codec.outputBuffers
+        }
+        extractor.selectTrack(0)
+
+        // start decoding
+        val kTimeOutUs: Long = 5000
+        val info = MediaCodec.BufferInfo()
+        var sawInputEOS = false
+        var sawOutputEOS = false
+        var noOutputCounter = 0
+
+        while (!sawOutputEOS && noOutputCounter < 50) {
+            noOutputCounter++
+            if (!sawInputEOS) {
+                val inputBufIndex = codec.dequeueInputBuffer(kTimeOutUs)
+                if (inputBufIndex >= 0) {
+                    val dstBuf = codecInputBuffers[inputBufIndex]
+                    var sampleSize =
+                        extractor.readSampleData(dstBuf!!, 0 /* offset */)
+                    var presentationTimeUs: Long = 0
+                    if (sampleSize < 0) {
+                        Log.d(TAG, "saw input EOS.")
+                        sawInputEOS = true
+                        sampleSize = 0
+                    } else {
+                        presentationTimeUs = extractor.sampleTime
+                    }
+                    codec.queueInputBuffer(
+                        inputBufIndex,
+                        0,  /* offset */
+                        sampleSize,
+                        presentationTimeUs,
+                        if (sawInputEOS) MediaCodec.BUFFER_FLAG_END_OF_STREAM else 0
+                    )
+                    if (!sawInputEOS) {
+                        extractor.advance()
+                    }
+                }
+            }
+            val res = codec.dequeueOutputBuffer(info, kTimeOutUs)
+            if (res >= 0) {
+                //Log.d(TAG, "got frame, size " + info.size + "/" + info.presentationTimeUs);
+                if (info.size > 0) {
+                    noOutputCounter = 0
+                }
+                if (info.size > 0 && reconfigure) {
+                    // once we've gotten some data out of the decoder, reconfigure it again
+                    reconfigure = false
+                    extractor.seekTo(0, MediaExtractor.SEEK_TO_NEXT_SYNC)
+                    sawInputEOS = false
+                    codec.stop()
+                    codec.configure(format, null,  /* surface */null,  /* crypto */0 /* flags */)
+                    codec.start()
+                    codecInputBuffers = codec.inputBuffers
+                    codecOutputBuffers = codec.outputBuffers
+                    continue
+                }
+                val outputBufIndex = res
+                val buf = codecOutputBuffers[outputBufIndex]
+                if (decodedIdx + (info.size / 2) >= decoded.size) {
+                    decoded = decoded.copyOf(decodedIdx + (info.size / 2))
+                }
+                var i = 0
+                while (i < info.size) {
+                    decoded[decodedIdx++] = buf.getShort(i)
+                    i += 2
+                }
+                codec.releaseOutputBuffer(outputBufIndex, false /* render */)
+                if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                    Log.d(TAG, "saw output EOS.")
+                    sawOutputEOS = true
+                }
+            } else if (res == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+                codecOutputBuffers = codec.outputBuffers
+                Log.d(TAG, "output buffers have changed.")
+            } else if (res == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                val oformat = codec.outputFormat
+                Log.d(TAG, "output format has changed to $oformat")
+            } else {
+                Log.d(TAG, "dequeueOutputBuffer returned $res")
+            }
+        }
+        codec.stop()
+        codec.release()
+        return decoded
+    }
+
+    // Produces OOM; doesn't decode MP3
+    private fun getAllBytes(path: String): Pair<ByteBuffer, Long> {
         val bufferHolder = mutableListOf<ByteBuffer>()
         var size = 0
+        val extractor = MediaExtractor()
+        extractor.setDataSource(path)
+        extractor.selectTrack(0)
 
         do {
             val buffer = ByteBuffer.allocateDirect(BUFFER_SIZE).order(ByteOrder.nativeOrder())
+
             sampleSize = extractor.readSampleData(buffer, 0)
             bufferHolder.add(buffer)
             size += sampleSize
         } while (extractor.advance())
         extractor.release()
-
         val result = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
 
         for (buff in bufferHolder) {
             result.put(buff)
         }
 
-        "--> Recvd ${bufferHolder.size} chunks; total size: $size bytes"
+        "--> Recvd ${result} chunks; total size: ${size * 2} bytes".e
         bufferHolder.clear()
 
-        return result
+        return Pair(result, size * 2L)
     }
 
     private fun doFFT(chunk: ByteBuffer): List<Float> {
@@ -96,35 +272,6 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap, Float) -> Un
         return chartData
     }
 
-    fun extract(path: String, baseColor: Int) {
-        maxAmplitude = 0f
-
-        extractor.setDataSource(path)
-        mFormat = extractor.getTrackFormat(0)
-        extractor.selectTrack(0)
-
-        val buffer = ByteBuffer.allocateDirect(BUFFER_SIZE).order(ByteOrder.nativeOrder())
-        val bitmap = fft(extractor, buffer, baseColor)
-
-
-//        "--> mFormat: ${mFormat.toString()}".e
-
-//        for (i in 0 until extractor.trackCount) {
-//            "formats: $i ${extractor.getTrackFormat(i)}".e
-//        }
-
-//        val resultList = mutableListOf<List<Float>>()
-
-        // Copy all music data to buffer
-//        val bufferAll = getAllBytes()
-//        bufferAll.order(ByteOrder.nativeOrder())
-//        bufferAll.rewind()
-//        val sampleList = getSamples(bufferAll)
-//        val bitmap = getBitmap(sampleList, baseColor)
-
-        onFullSpectrumReady.invoke(bitmap, maxAmplitude)
-    }
-
     private fun getSamples(bufferAll: ByteBuffer): List<List<Float>> {
         val chunk = ByteBuffer.allocateDirect(SAMPLE_SIZE).order(ByteOrder.nativeOrder())
         val limit = bufferAll.limit()
@@ -144,7 +291,7 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap, Float) -> Un
 
                 chunk.rewind()
             }
-        } while (bufferAll.position() < limit)
+        } while (bufferAll.position() < limit - 2)
 
         "--> Extracted ${result.size} buffers".e
 

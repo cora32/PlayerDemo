@@ -4,15 +4,17 @@
 
 #define  LOG_TAG    "native_md"
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-#define SAMPLE_SIZE 4096
+#define BUFFER_SIZE 1024 * 32
+//#define SAMPLE_SIZE 32768
+//#define SAMPLE_SIZE 16384
+//#define SAMPLE_SIZE 4096
+#define SAMPLE_SIZE 2048
 #define BITMAP_HEIGHT SAMPLE_SIZE / 4
 
 #include <iostream>
 #include <complex>
 
 using namespace std;
-
-//#define M_PI 3.1415926535897932384
 
 int log2(int N)    /*function to calculate the log2(.) of int numbers*/
 {
@@ -86,16 +88,18 @@ void process(JNIEnv *env,
              int length,
              int *bitmap_column_index,
              int base_color,
-             int bitmap_width,
-             jobject bitmapObj,
-             jmethodID setPixelMethod);
+             int bitmap_width);
 
 extern "C"
 JNIEXPORT jobject JNICALL
-Java_io_iskopasi_player_1test_utils_FullSampleExtractor_fft(JNIEnv *env, jobject thiz,
+Java_io_iskopasi_player_1test_utils_FullSampleExtractor_getWavSpectrum(JNIEnv *env, jobject thiz,
                                                             jobject extractor,
                                                             jobject recvBuffer,
-                                                            int base_color) {
+                                                                       int baseColor,
+                                                                       jlong fileSize) {
+    int bitmap_width = fileSize / SAMPLE_SIZE;
+//    int bitmap_width = 3891183 / SAMPLE_SIZE;
+
     // extractor methods
     jclass extractorClass = env->GetObjectClass(extractor);
     jmethodID readSampleData = env->GetMethodID(extractorClass,
@@ -113,9 +117,6 @@ Java_io_iskopasi_player_1test_utils_FullSampleExtractor_fft(JNIEnv *env, jobject
     jmethodID positionMethod = env->GetMethodID(byteBufferClass,
                                                 "position",
                                                 "()I");
-//    jmethodID putMethod = env->GetMethodID(byteBufferClass,
-//                                           "put",
-//                                           "(Ljava/nio/ByteBuffer;)Ljava/nio/ByteBuffer;");
     jmethodID putMethod = env->GetMethodID(byteBufferClass,
                                            "put",
                                            "([BII)Ljava/nio/ByteBuffer;");
@@ -133,79 +134,194 @@ Java_io_iskopasi_player_1test_utils_FullSampleExtractor_fft(JNIEnv *env, jobject
     jmethodID setPixelMethod = env->GetMethodID(bitmapClass,
                                                 "setPixel",
                                                 "(III)V");
-    int bitmap_width = 529200 / SAMPLE_SIZE + 1;
     jobject bitmapObj = env->CallStaticObjectMethod(bitmapClass, createBitmapMethodID,
-                                                    bitmap_width, BITMAP_HEIGHT, rgba8888Obj);
+                                                    bitmap_width,
+                                                    BITMAP_HEIGHT,
+                                                    rgba8888Obj);
 
-    jintArray pixels = env->NewIntArray(bitmap_width * BITMAP_HEIGHT);
+    jintArray pixels = env->NewIntArray(bitmap_width * BITMAP_HEIGHT + 1);
 
 //    auto *allBuffer = new jbyte[529200];
 //    jobject result = env->NewDirectByteBuffer(allBuffer, 529200);
 
     // buffer
-    auto *recvBuff = (jbyte *) env->GetDirectBufferAddress(recvBuffer);
-    auto *sampleBuffer = new jbyte[SAMPLE_SIZE];
+    auto *recv_buff = (jbyte *) env->GetDirectBufferAddress(recvBuffer);
+    auto *sample_buffer = new jbyte[SAMPLE_SIZE]{0};
+    auto *cache_buffer = new jbyte[BUFFER_SIZE]{0};
     int size = 0;
-    int prevStart = 0;
+    int prev_start = 0;
     int start = 0;
     int x = 0;
+    int cache_size = 0;
+    int processed = 0;
+
+    LOGE("Bitmap size: %d; width: %d; height: %d", bitmap_width * BITMAP_HEIGHT, bitmap_width,
+         BITMAP_HEIGHT);
+
+    memset(cache_buffer, 0, BUFFER_SIZE);
+    memset(sample_buffer, 0, SAMPLE_SIZE);
 
     do {
-        // Read data into recvBuff
-        int lSize = env->CallIntMethod(extractor, readSampleData, recvBuffer, 0);
-        size += lSize;
+        // Read data into cache_buffer
+        int read = env->CallIntMethod(extractor, readSampleData, recvBuffer, 0);
 
-        LOGE("READ: %d %d", lSize, size);
-        // Slice big chunk
-        if (lSize > SAMPLE_SIZE) {
-            int remains = lSize;
-            start = 0;
-
-            // Slice buffer by SAMPLE_SIZE
-            do {
-                LOGE("start: %d", start);
-                int length = SAMPLE_SIZE - prevStart;
-
-                memcpy(sampleBuffer + prevStart, recvBuff + start, length);
-                process(env,
-                        sampleBuffer,
-                        &pixels,
-                        length,
-                        &x,
-                        base_color,
-                        bitmap_width,
-                        bitmapObj,
-                        setPixelMethod);
-
-                remains -= length;
-                start += length;
-                prevStart = 0;
-            } while (remains >= SAMPLE_SIZE);
-
-            LOGE(" Processed %d; %d remains", start, remains);
-
-            // There is a remaining data, save position to process it on next iteration
-            if (remains > 0) {
-                LOGE("remaining: %d", remains);
-
-                memcpy(sampleBuffer, recvBuff + start, remains);
-                process(env,
-                        sampleBuffer,
-                        &pixels,
-                        remains,
-                        &x,
-                        base_color,
-                        bitmap_width,
-                        bitmapObj,
-                        setPixelMethod);
-
-                prevStart = remains;
-            }
-        } else {
-            // Accumulate small chunks
-
+        // Couldn't read data, advance extractor
+        if (read == -1) {
+            continue;
         }
+
+        memcpy(cache_buffer + cache_size, recv_buff, read);
+
+        cache_size += read;
+        size += cache_size;
+
+        LOGE("cache_size: %d; size: %d", cache_size, size);
+
+        // If not enough data, receive more
+        if (cache_size < SAMPLE_SIZE) {
+            continue;
+        }
+
+        // Slice buffer by SAMPLE_SIZE
+        processed = 0;
+        for (int i = 0; i < cache_size; i += SAMPLE_SIZE) {
+            int remaining = cache_size - processed;
+            int new_length = remaining > SAMPLE_SIZE ? SAMPLE_SIZE : remaining;
+            memcpy(sample_buffer, cache_buffer + i, new_length);
+
+            process(env,
+                    sample_buffer,
+                    &pixels,
+                    new_length,
+                    &x,
+                    baseColor,
+                    bitmap_width);
+
+            processed += new_length;
+        }
+
+        // Process remaining bytes
+        if (cache_size - processed > 0) {
+            int remaining = cache_size - processed;
+            LOGE("Remains: %d bytes", remaining);
+            memcpy(sample_buffer, cache_buffer + processed, remaining);
+
+            process(env,
+                    sample_buffer,
+                    &pixels,
+                    remaining,
+                    &x,
+                    baseColor,
+                    bitmap_width);
+        }
+
+        memset(cache_buffer, 0, BUFFER_SIZE);
+        memset(sample_buffer, 0, SAMPLE_SIZE);
+
+        LOGE("Processed: %d", processed);
+        cache_size = 0;
     } while (env->CallBooleanMethod(extractor, advanceMethod));
+
+    LOGE("Complete size: %d", size);
+
+    // Process remaining bytes
+    int remaining = cache_size - processed;
+    if (remaining > 0) {
+        LOGE("Remains: %d bytes", remaining);
+        memcpy(sample_buffer, cache_buffer + processed, remaining);
+
+        process(env,
+                sample_buffer,
+                &pixels,
+                remaining,
+                &x,
+                baseColor,
+                bitmap_width);
+    }
+
+    // Setting pixels to bitmap
+    jmethodID setPixelsMid = env->GetMethodID(bitmapClass, "setPixels", "([IIIIIII)V");
+    env->CallVoidMethod(bitmapObj, setPixelsMid, pixels, 0, bitmap_width, 0, 0, bitmap_width,
+                        BITMAP_HEIGHT);
+
+    return bitmapObj;
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_io_iskopasi_player_1test_utils_FullSampleExtractor_getSpectrumFromDecoded(JNIEnv *env,
+                                                                               jobject thiz,
+                                                                               jobject recvBuffer,
+                                                                               int baseColor,
+                                                                               jlong fileSize) {
+    int bitmap_width = fileSize / SAMPLE_SIZE;
+
+    // Bitmap methods
+    jclass bitmapConfig = env->FindClass("android/graphics/Bitmap$Config");
+    jfieldID rgba8888FieldID = env->GetStaticFieldID(bitmapConfig, "ARGB_8888",
+                                                     "Landroid/graphics/Bitmap$Config;");
+    jobject rgba8888Obj = env->GetStaticObjectField(bitmapConfig, rgba8888FieldID);
+
+    jclass bitmapClass = env->FindClass("android/graphics/Bitmap");
+    jmethodID createBitmapMethodID = env->GetStaticMethodID(bitmapClass, "createBitmap",
+                                                            "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+
+    jmethodID setPixelMethod = env->GetMethodID(bitmapClass,
+                                                "setPixel",
+                                                "(III)V");
+    jobject bitmapObj = env->CallStaticObjectMethod(bitmapClass, createBitmapMethodID,
+                                                    bitmap_width,
+                                                    BITMAP_HEIGHT,
+                                                    rgba8888Obj);
+
+    jintArray pixels = env->NewIntArray(bitmap_width * BITMAP_HEIGHT + 1);
+
+//    auto *allBuffer = new jbyte[529200];
+//    jobject result = env->NewDirectByteBuffer(allBuffer, 529200);
+
+    // buffer
+    auto *recv_buff = (jbyte *) env->GetDirectBufferAddress(recvBuffer);
+    auto *sample_buffer = new jbyte[SAMPLE_SIZE]{0};
+    int size = 0;
+    int prev_start = 0;
+    int start = 0;
+    int x = 0;
+    int processed = 0;
+
+    LOGE("Bitmap size: %d; width: %d; height: %d", bitmap_width * BITMAP_HEIGHT, bitmap_width,
+         BITMAP_HEIGHT);
+
+    // Slice buffer by SAMPLE_SIZE
+    processed = 0;
+    for (int i = 0; i < fileSize; i += SAMPLE_SIZE) {
+        int remaining = fileSize - processed;
+        int new_length = remaining > SAMPLE_SIZE ? SAMPLE_SIZE : remaining;
+        memcpy(sample_buffer, recv_buff + i, new_length);
+
+        process(env,
+                sample_buffer,
+                &pixels,
+                new_length,
+                &x,
+                baseColor,
+                bitmap_width);
+
+        processed += new_length;
+    }
+
+    // Process remaining bytes
+    if (fileSize - processed > 0) {
+        int remaining = fileSize - processed;
+        LOGE("Remains: %d bytes", remaining);
+        memcpy(sample_buffer, recv_buff + processed, remaining);
+
+        process(env,
+                sample_buffer,
+                &pixels,
+                remaining,
+                &x,
+                baseColor,
+                bitmap_width);
+    }
 
     // Setting pixels to bitmap
     jmethodID setPixelsMid = env->GetMethodID(bitmapClass, "setPixels", "([IIIIIII)V");
@@ -221,9 +337,7 @@ void process(JNIEnv *env,
              int length,
              int *x,
              int base_color,
-             int bitmap_width,
-             jobject bitmapObj,
-             jmethodID setPixelMethod
+             int bitmap_width
 ) {
     complex<double> vec[SAMPLE_SIZE];
 
@@ -231,8 +345,6 @@ void process(JNIEnv *env,
     for (int i = 0; i < length; i += 2) {
         double data_in_channel = (src[i] & 0x00ff) |
                                  (src[i + 1] << 8);
-//        auto float_value = (double)data_in_channel / 32768.0;
-
         vec[i] = (double) data_in_channel;
     }
 
@@ -248,6 +360,7 @@ void process(JNIEnv *env,
         double r = pow(vec[i].real(), 2.0);
         double im = pow(vec[i].imag(), 2.0);
         double amplitude = sqrt(r + im);
+//        LOGE("amplitude: %f", amplitude);
 
         if (amplitude > maxAmplitude) {
             maxAmplitude = amplitude;
@@ -258,17 +371,17 @@ void process(JNIEnv *env,
 
     // Generating bitmap
     float valueFactor = 255 / maxAmplitude;
-    for (int y = BITMAP_HEIGHT - 1; y >= 0; y--) {
+    for (int y = 0; y < BITMAP_HEIGHT; y++) {
         int alpha = amplitudes[y + BITMAP_HEIGHT] * valueFactor;
         int current_pixel = (base_color & 0x00ffffff) | (alpha << 24);
+//        LOGE("current_pixel: %d %d", amplitudes[y + BITMAP_HEIGHT], alpha);
 
         env->SetIntArrayRegion(*pixels,
                                *x + (y * bitmap_width),
                                1,
                                &current_pixel);
-
-//        env->CallVoidMethod(bitmapObj, setPixelMethod, *x, y, current_pixel);
     }
 
+//    LOGE("bitmap_width: %d x: %d", bitmap_width, *x);
     (*x)++;
 }
