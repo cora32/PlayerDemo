@@ -18,6 +18,10 @@ import kotlin.math.sqrt
 class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap, Float) -> Unit) {
     companion object {
         const val BUFFER_SIZE = 1024 * 32
+
+        init {
+            System.loadLibrary("player_test")
+        }
     }
 
     private val extractor by lazy { MediaExtractor() }
@@ -25,6 +29,13 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap, Float) -> Un
     private var sampleSize: Int = 0
     private var maxAmplitude = 0f
     private val noise = Noise.real(SAMPLE_SIZE)
+
+
+    private external fun fft(
+        extractor: MediaExtractor,
+        buffer: ByteBuffer,
+        base_color: Int
+    ): Bitmap
 
     private fun getAllBytes(): ByteBuffer {
         val bufferHolder = mutableListOf<ByteBuffer>()
@@ -92,21 +103,24 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap, Float) -> Un
         mFormat = extractor.getTrackFormat(0)
         extractor.selectTrack(0)
 
-        "--> mFormat: ${mFormat.toString()}".e
+        val buffer = ByteBuffer.allocateDirect(BUFFER_SIZE).order(ByteOrder.nativeOrder())
+        val bitmap = fft(extractor, buffer, baseColor)
+
+
+//        "--> mFormat: ${mFormat.toString()}".e
 
 //        for (i in 0 until extractor.trackCount) {
 //            "formats: $i ${extractor.getTrackFormat(i)}".e
 //        }
 
-        val resultList = mutableListOf<List<Float>>()
+//        val resultList = mutableListOf<List<Float>>()
 
         // Copy all music data to buffer
-        val bufferAll = getAllBytes()
-        bufferAll.rewind()
-
-        val sampleList = getSamples(bufferAll)
-
-        val bitmap = getBitmap(sampleList, baseColor)
+//        val bufferAll = getAllBytes()
+//        bufferAll.order(ByteOrder.nativeOrder())
+//        bufferAll.rewind()
+//        val sampleList = getSamples(bufferAll)
+//        val bitmap = getBitmap(sampleList, baseColor)
 
         onFullSpectrumReady.invoke(bitmap, maxAmplitude)
     }

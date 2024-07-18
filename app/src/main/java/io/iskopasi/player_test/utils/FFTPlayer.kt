@@ -44,7 +44,6 @@ class FFTPlayer(
     ) -> Unit
 ) {
     companion object {
-        const val SAMPLE_SIZE_KB = 1024
         const val SAMPLE_SIZE = 4096
     }
 
