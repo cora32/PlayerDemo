@@ -3,6 +3,7 @@ package io.iskopasi.player_test.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Handler
+import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.audio.AudioProcessor.EMPTY_BUFFER
@@ -21,6 +22,7 @@ import com.paramsen.noise.Noise
 import io.iskopasi.player_test.utils.Utils.bg
 import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.views.FFTView.Companion.FREQUENCY_BAND_LIMITS
+import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.floor
@@ -33,16 +35,15 @@ import kotlin.math.sqrt
 class FFTPlayer(
     context: Context,
     onHandleBuffer: (
-        List<Float>,
         MutableMap<Int, Float>,
-        Float,
         Float
     ) -> Unit,
     onFullSpectrumReady: (
         Bitmap,
-        Float,
-    ) -> Unit
+    ) -> Unit,
 ) {
+    private var fifoBitmap: FifoBitmap? = null
+
     companion object {
         const val SAMPLE_SIZE = 4096
     }
@@ -61,9 +62,10 @@ class FFTPlayer(
             .setRenderersFactory(rendererFactory)
             .build().apply { addListener(listener) }
     }
-    private val extractor by lazy {
-        FullSampleExtractor(onFullSpectrumReady)
-    }
+
+    //    private val extractor by lazy {
+//        FullSampleExtractor(onFullSpectrumReady)
+//    }
     private val bufferSink by lazy {
         object : AudioBufferSink {
             private var sampleRateHz = 0
@@ -71,6 +73,10 @@ class FFTPlayer(
             private var encoding = 0
             private val noise = Noise.real(SAMPLE_SIZE)
             private var fftBuffer = EMPTY_BUFFER
+            private val chartData = mutableListOf<Float>()
+            val src = FloatArray(SAMPLE_SIZE)
+            val dst = FloatArray(SAMPLE_SIZE + 2) { 0f } //real output length equals src+2
+            val frequencyMap = mutableMapOf<Int, Float>()
 
             override fun flush(sampleRateHz: Int, channelCount: Int, encoding: Int) {
                 this.sampleRateHz = sampleRateHz
@@ -81,6 +87,7 @@ class FFTPlayer(
             }
 
             override fun handleBuffer(buffer: ByteBuffer) {
+                chartData.clear()
                 val limit = buffer.limit()
                 val frameCount = (limit - buffer.position()) / (2 * channelCount)
                 val singleChannelOutputSize = frameCount * 2
@@ -110,10 +117,8 @@ class FFTPlayer(
             }
 
             private fun processFFT(buffer: ByteBuffer) {
-                val src = FloatArray(SAMPLE_SIZE)
-                val dst = FloatArray(SAMPLE_SIZE + 2) { 0f } //real output length equals src+2
-
                 val maxLimit = min(buffer.limit(), SAMPLE_SIZE)
+
                 for (i in 0 until maxLimit step 2) {
                     val short = buffer.getShort(i)
 
@@ -124,8 +129,7 @@ class FFTPlayer(
                 val fft: FloatArray = noise.fft(src, dst)
 
                 // Fill amplitude data
-                // The resulting graph is mirrored, so get only left data
-                val chartData = mutableListOf<Float>()
+                // The resulting graph is mirrored, so get only left part
                 for (i in 0 until fft.size / 2) {
                     val real = fft[i * 2]
                     val imaginary = fft[i * 2 + 1]
@@ -135,31 +139,37 @@ class FFTPlayer(
 
                 val size = SAMPLE_SIZE / 2
                 var startIndex = 0
-                val frequencyMap = mutableMapOf<Int, Float>()
                 var maxAvgAmplitude = 0f
                 var maxRawAmplitude = 0f
 
-                // Group amplitude by frequency
+                // Group amplitudes by their frequencies
                 for (frequency in FREQUENCY_BAND_LIMITS) {
                     val endIndex = floor(frequency / 20000f * size).toInt()
 
                     var accum = 0f
+                    // Sum amplitudes for current frequency bin
                     for (i in startIndex until endIndex) {
                         val amplitude = chartData[i]
                         accum += amplitude
 
+                        // Find max amplitude of all frequencies
                         if (amplitude > maxRawAmplitude) {
                             maxRawAmplitude = amplitude
                         }
                     }
 
+                    // Sometimes frequency group range can be 0
                     val amplitude = if (endIndex - startIndex == 0)
                         0f
-                    else
+                    else {
+                        // Get avg amplitude for frequency bin
                         accum / (endIndex - startIndex).toFloat()
+                    }
 
+                    // Fill avg amplitude for each frequency
                     frequencyMap[frequency] = amplitude
 
+                    // Get max avg amplitude
                     if (amplitude > maxAvgAmplitude) {
                         maxAvgAmplitude = amplitude
                     }
@@ -167,7 +177,9 @@ class FFTPlayer(
                     startIndex = endIndex
                 }
 
-                onHandleBuffer.invoke(chartData, frequencyMap, maxAvgAmplitude, maxRawAmplitude)
+                fifoBitmap?.add(chartData, maxRawAmplitude, onFullSpectrumReady)
+
+                onHandleBuffer.invoke(frequencyMap, maxAvgAmplitude)
             }
         }
     }
@@ -245,7 +257,22 @@ class FFTPlayer(
         player.seekTo(progress.toLong())
     }
 
-    fun requestFullSpectrum(path: String, color: Int) = bg {
-        extractor.extractJNI(path, color)
+    fun requestFullSpectrum(path: String, baseColor: Int) = bg {
+//        extractor.extractJNI(path, baseColor)
+    }
+
+    fun prepareFifoBitmap(path: String, baseColor: Int) {
+        fifoBitmap?.recycle()
+
+        val width = File(path).length() / (SAMPLE_SIZE / 2)
+//        val height = SAMPLE_SIZE / 2
+        val bufferSize = File(path).length()
+
+        fifoBitmap = FifoBitmap(
+            bufferSize.toInt(),
+            300.dp.value.toInt(),
+            (SAMPLE_SIZE / 4).dp.value.toInt(),
+            baseColor
+        )
     }
 }

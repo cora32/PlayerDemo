@@ -18,7 +18,7 @@ import kotlin.math.sqrt
 
 
 @UnstableApi
-class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap, Float) -> Unit) {
+class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap) -> Unit) {
     companion object {
         const val BUFFER_SIZE = 1024 * 32
         const val TAG = "FullSampleExtractor"
@@ -34,15 +34,12 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap, Float) -> Un
     private var maxAmplitude = 0f
     private val noise = Noise.real(SAMPLE_SIZE)
 
-
     fun extract(path: String, baseColor: Int) {
         "--> mFormat: ${mFormat.toString()}".e
 
 //        for (i in 0 until extractor.trackCount) {
 //            "formats: $i ${extractor.getTrackFormat(i)}".e
 //        }
-
-        val resultList = mutableListOf<List<Float>>()
 
         // Copy all music data to buffer
         val data = getAllBytes(path)
@@ -53,7 +50,7 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap, Float) -> Un
         bufferAll.rewind()
         val sampleList = getSamples(bufferAll)
         val bitmap = getBitmap(sampleList, baseColor)
-        onFullSpectrumReady.invoke(bitmap, maxAmplitude)
+        onFullSpectrumReady.invoke(bitmap)
     }
 
     fun extractJNI(path: String, baseColor: Int) {
@@ -76,9 +73,8 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap, Float) -> Un
             }
             val bitmap = getSpectrumFromDecoded(bufferDecodedData, baseColor, size)
 
-            onFullSpectrumReady.invoke(bitmap, maxAmplitude)
+            onFullSpectrumReady.invoke(bitmap)
         }
-
     }
 
     private external fun getWavSpectrum(

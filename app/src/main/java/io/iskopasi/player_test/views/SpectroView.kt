@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.ColorUtils
 import io.iskopasi.player_test.R
 
 
@@ -36,10 +35,8 @@ class SpectroView @JvmOverloads constructor(
     private var centerX = 0f
     private var centerY = 0f
     private val lineWidth = 2.dp.value
-    private var yStep = 0f
     private var resizeRect = RectF()
     private var columnWidth = 5.dp.value
-    private val dataQueue = mutableListOf<FFTChartData>()
     private var bitmap: Bitmap? = null
         set(value) {
             field = value
@@ -77,35 +74,8 @@ class SpectroView @JvmOverloads constructor(
 
         bitmap?.let {
             canvas.drawBitmap(it, null, resizeRect, null)
-            it.recycle()
         }
 
         drawFrame(canvas)
-    }
-
-    private fun drawSpectrum(canvas: Canvas) {
-        var xValue = 0f
-
-        dataQueue.forEach { data ->
-            val valueFactor = 255f / data.maxRawAmplitude
-            var yValue = height.toFloat()
-
-            for (i in 0 until data.dataList.size / 2 step 2) {
-                val amplitude = data.dataList[i] * valueFactor
-                val newColor = ColorUtils.setAlphaComponent(paint.color, amplitude.toInt())
-
-                canvas.drawLine(xValue,
-                    yValue,
-                    xValue + columnWidth,
-                    yValue,
-                    paint.apply {
-                        color = newColor
-                    })
-
-                yValue -= yStep * 2
-            }
-
-            xValue += columnWidth
-        }
     }
 }

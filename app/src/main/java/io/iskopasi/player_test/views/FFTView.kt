@@ -17,11 +17,8 @@ import io.iskopasi.player_test.R
 
 
 data class FFTChartData(
-    val dataList: List<Float> = listOf<Float>(),
     val map: MutableMap<Int, Float> = mutableMapOf(),
-    val fullSpectrumMap: MutableMap<Int, List<Float>> = mutableMapOf(),
     val maxAmplitude: Float = 0f,
-    val maxRawAmplitude: Float = 0f,
     val bitmap: Bitmap? = null,
 )
 
@@ -89,7 +86,6 @@ class FFTView @JvmOverloads constructor(
     private val lineWidth = 2.dp.value
     private val lOffset = 5.dp.value
     private val path = Path()
-    private var maxAmplitude = 0f
     private var yFactor = 0f
     private var barWidth = 20.dp.value
     private val labelOffset = 10.dp.value
@@ -102,8 +98,7 @@ class FFTView @JvmOverloads constructor(
             field = value
 
             if (value.map.isNotEmpty()) {
-                maxAmplitude = value.maxAmplitude
-                yFactor = (height - yPadding * 1.2f) / maxAmplitude
+                yFactor = (height - yPadding * 1.2f) / value.maxAmplitude
                 step = (width - xPadding) / value.map.size.toFloat()
 
                 invalidate()

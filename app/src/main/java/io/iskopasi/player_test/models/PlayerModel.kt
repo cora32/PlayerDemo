@@ -14,7 +14,6 @@ import io.iskopasi.player_test.room.MediaDao
 import io.iskopasi.player_test.utils.FFTPlayer
 import io.iskopasi.player_test.utils.LoopIterator
 import io.iskopasi.player_test.utils.Utils.bg
-import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.utils.share
 import io.iskopasi.player_test.views.FFTChartData
@@ -81,27 +80,22 @@ class PlayerModel @Inject constructor(
     private val player by lazy {
         FFTPlayer(
             context,
-            onHandleBuffer = { dataList, frequencyMap, maxAmplitude, maxRawAmplitude ->
+            onHandleBuffer = { frequencyMap, maxAmplitude ->
                 if (isPlaying.value == true) {
                     ui {
                         fftChartData.value =
                             FFTChartData(
-                                dataList,
-                                frequencyMap,
-                                fullSpectrumMap = mutableMapOf(),
-                                maxAmplitude,
-                                maxRawAmplitude
+                                map = frequencyMap,
+                                maxAmplitude = maxAmplitude
                             )
                     }
                 }
             },
-            onFullSpectrumReady = { bitmap, maxRawAmplitude ->
-                "--> Bitmap: ${bitmap.byteCount}; maxRawAmplitude: $maxRawAmplitude".e
+            onFullSpectrumReady = { bitmap ->
                 ui {
                     spectrumChartData.value =
                         FFTChartData(
-                            bitmap = bitmap,
-                            maxRawAmplitude = maxRawAmplitude
+                            bitmap = bitmap
                         )
                 }
             })
@@ -171,8 +165,9 @@ class PlayerModel @Inject constructor(
 
     fun start() {
         isPlaying.value = true
+        player.prepareFifoBitmap(currentData.value!!.path, baseColor)
         player.play()
-        player.requestFullSpectrum(currentData.value!!.path, baseColor)
+//        player.requestFullSpectrum(currentData.value!!.path, baseColor)
     }
 
     fun pause() {
