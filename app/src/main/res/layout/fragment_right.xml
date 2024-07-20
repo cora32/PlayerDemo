@@ -22,7 +22,7 @@
         app:layout_constraintTop_toTopOf="parent"
         android:paddingVertical="8dp" />
 
-    <androidx.recyclerview.widget.RecyclerView
+    <io.iskopasi.player_test.views.TransparentRecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="0dp"
         android:layout_height="0dp"

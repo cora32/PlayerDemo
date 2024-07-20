@@ -79,7 +79,7 @@ class SlidingContainer @JvmOverloads constructor(
     private val startYCoordMap = mutableMapOf<View, Float>()
     private var deltaThreshold = 120f
     private var tempDeltaX = 0f
-    private var tempDeltaY = 0f
+    var tempDeltaY = 0f
     private var globalDeltaX = 0f
     private var globalDeltaY = 0f
     private var savedGlobalDeltaX = 0f
@@ -165,6 +165,8 @@ class SlidingContainer @JvmOverloads constructor(
     private var centerScreenInitialY = 0f
     private val arrowTransitionWidth = (frameWidth * 0.03f) * 2f
     private val arrowTransitionHeight = (frameHeight * 0.07f) * 2f
+    private var maxXPosition = 3
+    private var maxYPosition = 3
     private var topArrow: SliderArrow? = null
     private var leftArrow: SliderArrow? = null
     private var rightArrow: SliderArrow? = null
@@ -196,9 +198,12 @@ class SlidingContainer @JvmOverloads constructor(
         MenuLayoutBinding.inflate(LayoutInflater.from(context.applicationContext), this, false)
 //        LayoutInflater.from(context.applicationContext).inflate(R.layout.menu_layout, this, false)
     }
+    private var isActionDown = false
 
     init {
         isClickable = true
+
+        toggleArrows()
 
         ui {
             // Show arrows at first
@@ -219,32 +224,28 @@ class SlidingContainer @JvmOverloads constructor(
         yScreenIndex = prevState.yOffset + 1
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        val consumed = gestureDetector.onTouchEvent(event)
-
+    fun processTouchEvent(event: MotionEvent) {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                isActionDown = true
+
                 // If user touched view before animations completed, reset frame indexes
                 if (stopAnimations()) {
                     resetIndexes()
                 }
 
-                startX = event.x
-                startY = event.y
+                startX = event.rawX
+                startY = event.rawY
                 savedGlobalDeltaX = globalDeltaX
                 savedGlobalDeltaY = globalDeltaY
 
                 // Animate visibility of arrows
-//                leftArrow?.show()
-//                topArrow?.show()
-//                rightArrow?.show()
-//                bottomArrow?.show()
                 toggleArrows()
             }
 
             MotionEvent.ACTION_MOVE -> {
-                tempDeltaX = event.x - startX
-                tempDeltaY = event.y - startY
+                tempDeltaX = event.rawX - startX
+                tempDeltaY = event.rawY - startY
                 globalDeltaX = savedGlobalDeltaX + tempDeltaX
                 globalDeltaY = savedGlobalDeltaY + tempDeltaY
 
@@ -253,6 +254,9 @@ class SlidingContainer @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_UP -> {
+                isActionDown = false
+                val consumed = gestureDetector.onTouchEvent(event)
+
                 if (!consumed) {
                     if (tempDeltaX > deltaThreshold) {
                         goLeft()
@@ -267,31 +271,54 @@ class SlidingContainer @JvmOverloads constructor(
                 prevState = currentState
                 currentState = positionMap[yScreenIndex][xScreenIndex]
 
+                // Animate screen sliding
                 runAnimations()
 
+                // Display only available arrows
                 toggleArrows()
 
-                // Animate visibility of arrows
+                // Hide arrows after a sec of action up
                 ui {
                     delay(1000L)
-                    leftArrow?.hide()
-                    topArrow?.hide()
-                    rightArrow?.hide()
-                    bottomArrow?.hide()
+
+                    if (!isActionDown) {
+                        leftArrow?.hide()
+                        topArrow?.hide()
+                        rightArrow?.hide()
+                        bottomArrow?.hide()
+                    }
                 }
             }
         }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        "slider: onTouchEvent: ${event.action}  ${event.rawX}".e
+
+        processTouchEvent(event)
 
         return true
     }
 
+
+//    override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
+//        "slider: onInterceptTouchEvent: ${event.action}".e
+//
+//        processTouchEvent(event)
+//
+////        super.onInterceptTouchEvent(event)
+//
+//        return false
+//    }
+
+
     private fun toggleArrows() {
         when (currentState) {
             SlidingScreenPosition.CENTER -> {
-                leftArrow?.show()
-                topArrow?.show()
-                rightArrow?.show()
-                bottomArrow?.show()
+                if (canGoLeft()) leftArrow?.show()
+                if (canGoUp()) topArrow?.show()
+                if (canGoRight()) rightArrow?.show()
+                if (canGoDown()) bottomArrow?.show()
             }
 
             SlidingScreenPosition.LEFT -> {
@@ -324,12 +351,14 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun runAnimations() {
-        hideMenu()
-
         animationX = getXAnimator()
         animationY = getYAnimator()
 
         "--> Animating from $prevState to $currentState $xScreenIndex $yScreenIndex".e
+
+        if (prevState != currentState) {
+            hideMenu()
+        }
 
         AnimatorSet().apply {
             playTogether(animationX, animationY)
@@ -338,21 +367,29 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun canGoUp(): Boolean {
+        if (yScreenIndex < 1) return false
+
         val expectedPositionName = positionMap[yScreenIndex - 1][xScreenIndex].name
         return viewMap[expectedPositionName] != null
     }
 
     private fun canGoDown(): Boolean {
+        if (xScreenIndex >= maxYPosition - 1) return false
+
         val expectedPositionName = positionMap[yScreenIndex + 1][xScreenIndex].name
         return viewMap[expectedPositionName] != null
     }
 
     private fun canGoRight(): Boolean {
+        if (xScreenIndex >= maxXPosition - 1) return false
+
         val expectedPositionName = positionMap[yScreenIndex][xScreenIndex + 1].name
         return viewMap[expectedPositionName] != null
     }
 
     private fun canGoLeft(): Boolean {
+        if (xScreenIndex < 1) return false
+
         val expectedPositionName = positionMap[yScreenIndex][xScreenIndex - 1].name
         return viewMap[expectedPositionName] != null
     }

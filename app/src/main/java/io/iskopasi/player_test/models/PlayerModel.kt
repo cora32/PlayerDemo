@@ -128,7 +128,7 @@ class PlayerModel @Inject constructor(
             iter = LoopIterator(dataList)
 
             ui {
-                setStates(iter.value!!)
+                setStates(iter.value)
                 mediaList.value = dataList
             }
         }

@@ -22,7 +22,6 @@ class FifoBitmap(
         onFullSpectrumReady: (Bitmap) -> Unit
     ) {
         val valueFactor: Float = 255 / maxRawAmplitude
-//        val dataSize = data.size / 2
         val bitmapHeight = SAMPLE_SIZE / 4
 
         for (y in 0 until bitmapHeight) {
@@ -37,7 +36,9 @@ class FifoBitmap(
 
         onFullSpectrumReady(bitmap)
 
-        x++
+        if (x++ >= width) {
+            x = 0
+        }
     }
 
     fun recycle() {

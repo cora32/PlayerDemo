@@ -33,6 +33,7 @@ fun MainFragment.setupRight(
     )
     binding.recyclerView.adapter = adapter
     binding.recyclerView.setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
+//        "---> scrollY: $scrollY $oldScrollY".e
         if (scrollY != oldScrollY) {
             rootBinding.container.hideMenu()
         }

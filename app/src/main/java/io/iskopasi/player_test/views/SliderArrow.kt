@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
+import android.view.ViewPropertyAnimator
 import android.view.animation.BounceInterpolator
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
@@ -43,6 +44,7 @@ open class SliderArrow @JvmOverloads constructor(
     private var deltaX: Float = 0f
     private var deltaY: Float = 0f
     private val lineWidth = 5f
+    private var hideAnimator: ViewPropertyAnimator? = null
     private var arrowXAnimator: ValueAnimator = ValueAnimator.ofFloat(0f, 0f).apply {
         interpolator = BounceInterpolator()
         addUpdateListener { anim ->
@@ -170,10 +172,13 @@ open class SliderArrow @JvmOverloads constructor(
     }
 
     fun show() {
+        hideAnimator?.cancel()
         animate().setDuration(100L).alpha(1f)
     }
 
     fun hide() {
-        animate().setDuration(600L).alpha(0f)
+        hideAnimator = animate().apply {
+            setDuration(500L).alpha(0f)
+        }
     }
 }

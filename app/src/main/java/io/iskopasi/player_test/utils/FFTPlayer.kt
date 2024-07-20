@@ -323,7 +323,8 @@ class FFTPlayer(
 
         val width = File(path).length() / SAMPLE_SIZE
         val height = SAMPLE_SIZE / 4
-        val bufferSize = File(path).length()
+//        val bufferSize = File(path).length()
+        val bufferSize = width.toInt() * height * 2
 
         fifoBitmap = FifoBitmap(
             bufferSize.toInt(),

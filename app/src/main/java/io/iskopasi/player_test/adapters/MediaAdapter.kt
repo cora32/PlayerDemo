@@ -15,6 +15,7 @@ class MediaAdapter(
     val onClick: (Int) -> Unit,
     val onLongPress: (MotionEvent, Int) -> Unit
 ) : RecyclerView.Adapter<MediaAdapter.ViewHolder>() {
+    private var lastEvent: MotionEvent? = null
     var data: List<MediaData> = emptyList()
         set(value) {
             field = value
@@ -45,7 +46,6 @@ class MediaAdapter(
 
     override fun getItemCount(): Int = data.size
 
-    private var lastEvent: MotionEvent? = null
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = data[position]
         val context = holder.itemView.context
