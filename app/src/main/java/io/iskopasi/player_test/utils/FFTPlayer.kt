@@ -41,6 +41,7 @@ class FFTPlayer(
     onFullSpectrumReady: (
         Bitmap,
     ) -> Unit,
+    onPlaylistFinished: () -> Unit
 ) {
     private var fifoBitmap: FifoBitmap? = null
 
@@ -50,18 +51,51 @@ class FFTPlayer(
 
     private val listener by lazy {
         object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (isPlaying) {
+//                    onPlaylistStarted()
+                } else {
+                    // Not playing because playback is paused, ended, suppressed, or the player
+                    // is buffering, stopped or failed. Check player.playWhenReady,
+                    // player.playbackState, player.playbackSuppressionReason and
+                    // player.playerError for details.
+
+                    onPlaylistFinished()
+                }
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+
+                when (playbackState) {
+                    Player.STATE_IDLE -> {}
+                    Player.STATE_BUFFERING -> {}
+                    Player.STATE_READY -> {}
+                    Player.STATE_ENDED -> {}
+                }
+            }
+
             override fun onEvents(player: Player, events: Player.Events) {
                 super.onEvents(player, events)
-
-                "--> events: ${events}".e
+//                if (
+//                    events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
+//                    events.contains(Player.EVENT_PLAY_WHEN_READY_CHANGED)
+//                ) {
+//                    uiModule.updateUi(player)
+//                }
             }
         }
     }
     private val player by lazy {
         ExoPlayer.Builder(context)
             .setRenderersFactory(rendererFactory)
-            .build().apply { addListener(listener) }
+            .build().apply {
+                addListener(listener)
+            }
     }
+
+    val isPlaying: Boolean
+        get() = player.isPlaying
 
     //    private val extractor by lazy {
 //        FullSampleExtractor(onFullSpectrumReady)
@@ -73,10 +107,11 @@ class FFTPlayer(
             private var encoding = 0
             private val noise = Noise.real(SAMPLE_SIZE)
             private var fftBuffer = EMPTY_BUFFER
-            private val chartData = mutableListOf<Float>()
-            val src = FloatArray(SAMPLE_SIZE)
-            val dst = FloatArray(SAMPLE_SIZE + 2) { 0f } //real output length equals src+2
-            val frequencyMap = mutableMapOf<Int, Float>()
+            private val chartData = FloatArray(SAMPLE_SIZE)
+            private val src = FloatArray(SAMPLE_SIZE)
+            private val dst = FloatArray(SAMPLE_SIZE + 2) { 0f } //real output length equals src+2
+            private val frequencyMap = mutableMapOf<Int, Float>()
+            private var isProcessing = false
 
             override fun flush(sampleRateHz: Int, channelCount: Int, encoding: Int) {
                 this.sampleRateHz = sampleRateHz
@@ -87,7 +122,21 @@ class FFTPlayer(
             }
 
             override fun handleBuffer(buffer: ByteBuffer) {
-                chartData.clear()
+                if (isProcessing) return
+
+                isProcessing = true
+
+                // Cannot access buffer in different thread
+                fillBuffer(buffer)
+
+                bg {
+                    processFFT()
+
+                    isProcessing = false
+                }
+            }
+
+            private fun fillBuffer(buffer: ByteBuffer) {
                 val limit = buffer.limit()
                 val frameCount = (limit - buffer.position()) / (2 * channelCount)
                 val singleChannelOutputSize = frameCount * 2
@@ -112,15 +161,13 @@ class FFTPlayer(
 
                     fftBuffer.putShort((sum / channelCount).toShort())
                 }
-
-                processFFT(fftBuffer)
             }
 
-            private fun processFFT(buffer: ByteBuffer) {
-                val maxLimit = min(buffer.limit(), SAMPLE_SIZE)
+            private fun processFFT() {
+                val maxLimit = min(fftBuffer.limit(), SAMPLE_SIZE)
 
                 for (i in 0 until maxLimit step 2) {
-                    val short = buffer.getShort(i)
+                    val short = fftBuffer.getShort(i)
 
                     src[i] = short.toFloat()
                 }
@@ -133,8 +180,9 @@ class FFTPlayer(
                 for (i in 0 until fft.size / 2) {
                     val real = fft[i * 2]
                     val imaginary = fft[i * 2 + 1]
+                    val amplitude = sqrt(real.pow(2f) + imaginary.pow(2f))
 
-                    chartData.add(sqrt(real.pow(2f) + imaginary.pow(2f)))
+                    chartData[i] = amplitude
                 }
 
                 val size = SAMPLE_SIZE / 2
@@ -237,8 +285,17 @@ class FFTPlayer(
         player.play()
     }
 
-    fun add(uri: String) {
+    fun next() {
+        player.seekToNextMediaItem()
+    }
+
+    fun prev() {
+        player.seekToPreviousMediaItem()
+    }
+
+    fun set(uri: String) {
         player.setMediaItem(MediaItem.fromUri(uri))
+//        player.addMediaItem(MediaItem.fromUri(uri))
     }
 
     fun pause() {
@@ -253,8 +310,8 @@ class FFTPlayer(
         player.repeatMode = if (value) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
     }
 
-    fun seekTo(progress: Int) {
-        player.seekTo(progress.toLong())
+    fun seekTo(progress: Long) {
+        player.seekTo(progress)
     }
 
     fun requestFullSpectrum(path: String, baseColor: Int) = bg {
@@ -264,15 +321,17 @@ class FFTPlayer(
     fun prepareFifoBitmap(path: String, baseColor: Int) {
         fifoBitmap?.recycle()
 
-        val width = File(path).length() / (SAMPLE_SIZE / 2)
-//        val height = SAMPLE_SIZE / 2
+        val width = File(path).length() / SAMPLE_SIZE
+        val height = SAMPLE_SIZE / 4
         val bufferSize = File(path).length()
 
         fifoBitmap = FifoBitmap(
             bufferSize.toInt(),
-            300.dp.value.toInt(),
-            (SAMPLE_SIZE / 4).dp.value.toInt(),
+            min(width.toInt(), 500.dp.value.toInt()),
+            height,
             baseColor
         )
     }
+
+    fun getCurrentPosition() = player.currentPosition
 }

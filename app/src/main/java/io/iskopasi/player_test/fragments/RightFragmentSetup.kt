@@ -1,11 +1,13 @@
 package io.iskopasi.player_test.fragments
 
+import android.annotation.SuppressLint
 import androidx.recyclerview.widget.LinearLayoutManager
 import io.iskopasi.player_test.adapters.MediaAdapter
 import io.iskopasi.player_test.databinding.FragmentMainBinding
 import io.iskopasi.player_test.databinding.FragmentRightBinding
 import io.iskopasi.player_test.models.PlayerModel
 
+@SuppressLint("UnsafeOptInUsageError")
 fun MainFragment.setupRight(
     model: PlayerModel,
     binding: FragmentRightBinding,

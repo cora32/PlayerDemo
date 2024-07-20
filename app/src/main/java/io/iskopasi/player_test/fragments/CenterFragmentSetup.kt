@@ -116,7 +116,7 @@ fun MainFragment.setupCenter(
         binding.tv.text = data.name
         binding.tv2.text = data.subtitle
         binding.controls.seekBar.max = data.duration
-        binding.controls.timerEnd.text = DateUtils.formatElapsedTime(data.duration.toLong())
+        binding.controls.timerEnd.text = DateUtils.formatElapsedTime(data.duration.toLong() / 1000L)
 
         data.imageId.getAccent(requireContext().applicationContext, data.path) {
             it?.let {
@@ -141,15 +141,15 @@ fun MainFragment.setupCenter(
     }
 
     model.currentProgress.observe(requireActivity()) {
-        binding.controls.seekBar.progress = it
-        binding.controls.timerStart.text = DateUtils.formatElapsedTime(it.toLong())
+        binding.controls.seekBar.progress = it.toInt()
+        binding.controls.timerStart.text = DateUtils.formatElapsedTime(it.toLong() / 1000L)
     }
 
     binding.controls.seekBar.setOnSeekBarChangeListener(object :
         SeekBar.OnSeekBarChangeListener {
         override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
             if (fromUser) {
-                model.setSeekPosition(progress)
+                model.setSeekPosition(progress.toLong())
             }
         }
 

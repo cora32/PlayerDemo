@@ -44,7 +44,7 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap) -> Unit) {
         // Copy all music data to buffer
         val data = getAllBytes(path)
         val bufferAll = data.first
-        val size = data.second
+//        val size = data.second
 
         bufferAll.order(ByteOrder.nativeOrder())
         bufferAll.rewind()
@@ -60,11 +60,9 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap) -> Unit) {
             setDataSource(path)
             mFormat = getTrackFormat(0)
             selectTrack(0)
-            "---> Decoding...".e
-            val decoded = decodeToMemory(path, true)
+            val decoded = decodeToMemory(path, true) // Slow and OOMy
             release()
 
-            "---> Decoding complete.".e
             val size = decoded.size * 2L
             val bufferDecodedData =
                 ByteBuffer.allocateDirect(size.toInt()).order(ByteOrder.nativeOrder())

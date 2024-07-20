@@ -230,6 +230,7 @@ class VolumeView @JvmOverloads constructor(
                     if (y > height - 100) {
                         allowDraw = false
                         volumeAngle = 0f
+                        yThreshold = Float.MAX_VALUE // Reducing outer scale
 
                         // set volume
                         adjustVolume(volumeAngle)

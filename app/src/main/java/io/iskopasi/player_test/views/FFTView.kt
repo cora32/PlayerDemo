@@ -130,11 +130,10 @@ class FFTView @JvmOverloads constructor(
         canvas.drawRect(bgRect, bgPaint)
 
         if (data.map.isEmpty()) {
-            canvas.drawText(
-                noDataText,
+            drawNoData(
+                canvas,
                 centerX - textWidth / 2f,
                 centerY - labelOffset * 3,
-                paintNoData
             )
         } else {
 //        drawFrequencies(canvas)

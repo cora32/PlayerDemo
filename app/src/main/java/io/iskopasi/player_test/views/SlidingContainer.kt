@@ -324,6 +324,8 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun runAnimations() {
+        hideMenu()
+
         animationX = getXAnimator()
         animationY = getYAnimator()
 

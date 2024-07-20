@@ -2,6 +2,7 @@ package io.iskopasi.player_test.models
 
 import android.app.Application
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
@@ -17,6 +18,7 @@ import io.iskopasi.player_test.utils.Utils.bg
 import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.utils.share
 import io.iskopasi.player_test.views.FFTChartData
+import kotlinx.coroutines.delay
 import java.io.File
 import javax.inject.Inject
 
@@ -71,7 +73,7 @@ class PlayerModel @Inject constructor(
     var isRepeating = MutableLiveData(false)
     var isFavorite = MutableLiveData(false)
     var currentActiveIndex = MutableLiveData(0)
-    var currentProgress = MutableLiveData(0)
+    var currentProgress = MutableLiveData(0L)
     var mediaList = MutableLiveData(listOf<MediaData>())
     var fftChartData = MutableLiveData(FFTChartData())
     var spectrumChartData = MutableLiveData(FFTChartData())
@@ -80,30 +82,49 @@ class PlayerModel @Inject constructor(
     private val player by lazy {
         FFTPlayer(
             context,
-            onHandleBuffer = { frequencyMap, maxAmplitude ->
-                if (isPlaying.value == true) {
-                    ui {
-                        fftChartData.value =
-                            FFTChartData(
-                                map = frequencyMap,
-                                maxAmplitude = maxAmplitude
-                            )
-                    }
-                }
-            },
-            onFullSpectrumReady = { bitmap ->
-                ui {
-                    spectrumChartData.value =
-                        FFTChartData(
-                            bitmap = bitmap
-                        )
-                }
-            })
+            onHandleBuffer = ::onHandleBuffer,
+            onFullSpectrumReady = ::onFullSpectrumReady,
+            onPlaylistFinished = ::onPlaylistFinished
+        )
+    }
+
+    private fun onFullSpectrumReady(bitmap: Bitmap) {
+        ui {
+            spectrumChartData.value =
+                FFTChartData(
+                    bitmap = bitmap
+                )
+        }
+    }
+
+    private fun requestCurrentPosition() = ui {
+        while (player.isPlaying) {
+            currentProgress.value = player.getCurrentPosition()
+            delay(500L)
+        }
+    }
+
+    private fun onHandleBuffer(frequencyMap: MutableMap<Int, Float>, maxAmplitude: Float) {
+        if (isPlaying.value == true) {
+            ui {
+                fftChartData.value =
+                    FFTChartData(
+                        map = frequencyMap,
+                        maxAmplitude = maxAmplitude
+                    )
+            }
+        }
+    }
+
+    private fun onPlaylistFinished() {
+        pause()
+        currentProgress.value = 0
     }
 
     init {
         bg {
-            val dataList = repo.read(getApplication()).toMediaData().sortedBy { it.subtitle }
+            val dataList = repo.read(getApplication()).toMediaData()
+                .sortedBy { it.subtitle }
             iter = LoopIterator(dataList)
 
             ui {
@@ -141,9 +162,9 @@ class PlayerModel @Inject constructor(
         currentActiveIndex.value = iter.index
 
         isFavorite.value = iter.value?.isFavorite
-        currentProgress.value = (0..currentData.value!!.duration).random()
+        currentProgress.value = 0
 
-        player.add(currentData.value!!.path)
+        player.set(currentData.value!!.path)
     }
 
     fun setMedia(index: Int) {
@@ -158,7 +179,7 @@ class PlayerModel @Inject constructor(
         setStates(iter.next())
     }
 
-    fun setSeekPosition(progress: Int) {
+    fun setSeekPosition(progress: Long) {
         currentProgress.value = progress
         player.seekTo(progress)
     }
@@ -167,6 +188,8 @@ class PlayerModel @Inject constructor(
         isPlaying.value = true
         player.prepareFifoBitmap(currentData.value!!.path, baseColor)
         player.play()
+
+        requestCurrentPosition()
 //        player.requestFullSpectrum(currentData.value!!.path, baseColor)
     }
 

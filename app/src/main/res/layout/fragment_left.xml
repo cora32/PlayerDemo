@@ -63,7 +63,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/fft_view" />
 
-    <io.iskopasi.player_test.views.SpectroView
+    <io.iskopasi.player_test.views.SpectrumView
         android:id="@+id/spectro_view"
         android:layout_width="0dp"
         android:layout_height="300dp"

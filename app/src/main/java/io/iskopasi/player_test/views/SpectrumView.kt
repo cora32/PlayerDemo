@@ -13,7 +13,7 @@ import androidx.core.content.res.ResourcesCompat
 import io.iskopasi.player_test.R
 
 
-class SpectroView @JvmOverloads constructor(
+class SpectrumView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -72,8 +72,14 @@ class SpectroView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         canvas.drawColor(bg)
 
-        bitmap?.let {
-            canvas.drawBitmap(it, null, resizeRect, null)
+        if (bitmap == null) {
+            drawNoData(
+                canvas,
+                centerX - textWidth / 2f,
+                centerY,
+            )
+        } else {
+            canvas.drawBitmap(bitmap!!, null, resizeRect, null)
         }
 
         drawFrame(canvas)

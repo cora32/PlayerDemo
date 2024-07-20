@@ -10,6 +10,8 @@ import android.view.animation.BounceInterpolator
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import io.iskopasi.player_test.R
+import kotlin.math.max
+import kotlin.math.min
 
 
 class SliderArrowHorizontal @JvmOverloads constructor(
@@ -75,11 +77,11 @@ open class SliderArrow @JvmOverloads constructor(
     private var endX = 0f
     private var endY = 0f
     private var padding = 8.dp.value
+    private val maxXDeviation = 20.dp.value
+    private val maxYDeviation = 8.dp.value
 
     init {
         id = name.hashCode()
-
-//        hide()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -115,11 +117,39 @@ open class SliderArrow @JvmOverloads constructor(
         super.onDraw(canvas)
 
         if (isHorizontal) {
-            canvas.drawLine(startX, startY, centerX - lineWidth / 3, centerY + deltaY, paint)
-            canvas.drawLine(centerX + lineWidth / 3, centerY + deltaY, endX, endY, paint)
+            deltaY = if (deltaY > 0) {
+                min(deltaY, maxYDeviation)
+            } else if (deltaY < 0) {
+                max(deltaY, -maxYDeviation)
+            } else 0f
+
+            canvas.drawLine(
+                startX, startY,
+                centerX - lineWidth / 3, centerY + deltaY,
+                paint
+            )
+            canvas.drawLine(
+                centerX + lineWidth / 3, centerY + deltaY,
+                endX, endY,
+                paint
+            )
         } else {
-            canvas.drawLine(startX, startY, centerX + deltaX, centerY - lineWidth / 3, paint)
-            canvas.drawLine(centerX + deltaX, centerY + lineWidth / 3, endX, endY, paint)
+            deltaX = if (deltaX > 0) {
+                min(deltaX, maxXDeviation)
+            } else if (deltaX < 0) {
+                max(deltaX, -maxXDeviation)
+            } else 0f
+
+            canvas.drawLine(
+                startX, startY,
+                centerX + deltaX, centerY - lineWidth / 3,
+                paint
+            )
+            canvas.drawLine(
+                centerX + deltaX, centerY + lineWidth / 3,
+                endX, endY,
+                paint
+            )
         }
     }
 

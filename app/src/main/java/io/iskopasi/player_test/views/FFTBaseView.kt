@@ -62,4 +62,12 @@ open class FFTBaseView @JvmOverloads constructor(
             bottom = height
         }
     }
+
+    fun drawNoData(canvas: Canvas, x: Float, y: Float) {
+        canvas.drawText(
+            noDataText,
+            x, y,
+            paintNoData
+        )
+    }
 }
