@@ -9,6 +9,7 @@ import androidx.fragment.app.viewModels
 import androidx.media3.common.util.UnstableApi
 import dagger.hilt.android.AndroidEntryPoint
 import io.iskopasi.player_test.R
+import io.iskopasi.player_test.databinding.FragmentBottomBinding
 import io.iskopasi.player_test.databinding.FragmentLeftBinding
 import io.iskopasi.player_test.databinding.FragmentMainBinding
 import io.iskopasi.player_test.databinding.FragmentRightBinding
@@ -25,6 +26,7 @@ class MainFragment : Fragment() {
     private val centerBinding by lazy { binding.container.getBinding<FragmentScreenMainBinding>() }
     private val rightBinding by lazy { binding.container.getBinding<FragmentRightBinding>() }
     private val leftBinding by lazy { binding.container.getBinding<FragmentLeftBinding>() }
+    private val bottomBinding by lazy { binding.container.getBinding<FragmentBottomBinding>() }
     private val model: PlayerModel by viewModels()
 
     override fun onCreateView(
@@ -55,6 +57,11 @@ class MainFragment : Fragment() {
                     SlidingScreenPosition.TOP,
                     TopScreenBinding::inflate
                 ),
+                SlidingScreen(
+                    R.layout.fragment_bottom,
+                    SlidingScreenPosition.BOTTOM,
+                    FragmentBottomBinding::inflate
+                ),
             )
         )
 
@@ -67,5 +74,6 @@ class MainFragment : Fragment() {
         setupCenter(model, centerBinding, binding)
         setupRight(model, rightBinding, binding)
         setupLeft(model, leftBinding, binding)
+        setupBottom(model, bottomBinding, binding)
     }
 }

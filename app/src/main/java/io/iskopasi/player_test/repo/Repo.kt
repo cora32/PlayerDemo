@@ -52,9 +52,9 @@ class Repo @Inject constructor() {
 //                val text = "Beach"
 //                if (path.contains(text) || name.contains(text) || album.contains(text)) {
                 files.add(mFile)
+//                    "->> file: $mFile".e
 //                }
 
-//                "->> file: $mFile".e
             }
         }
 

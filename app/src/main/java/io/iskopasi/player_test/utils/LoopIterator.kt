@@ -4,7 +4,7 @@ import io.iskopasi.player_test.utils.Utils.e
 
 class LoopIterator<T>(private val data: List<T> = listOf()) {
     var value: T? = null
-    var index = -1
+    private var index = -1
 
     init {
         if (data.isNotEmpty()) {
@@ -57,4 +57,6 @@ class LoopIterator<T>(private val data: List<T> = listOf()) {
 
         return value
     }
+
+    fun get(index: Int) = data[index]
 }

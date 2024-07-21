@@ -15,6 +15,7 @@ import io.iskopasi.player_test.room.MediaDao
 import io.iskopasi.player_test.utils.FFTPlayer
 import io.iskopasi.player_test.utils.LoopIterator
 import io.iskopasi.player_test.utils.Utils.bg
+import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.utils.share
 import io.iskopasi.player_test.views.FFTChartData
@@ -67,25 +68,38 @@ class PlayerModel @Inject constructor(
     )
     private lateinit var iter: LoopIterator<MediaData>
     private var previousData: MediaData? = null
-    var currentData: MutableLiveData<MediaData?> = MutableLiveData(MediaData.empty)
+    var currentData: MutableLiveData<MediaData> = MutableLiveData(MediaData.empty)
+    var playlist = MutableLiveData(listOf<MediaData>())
     var isPlaying = MutableLiveData(false)
     var isShuffling = MutableLiveData(false)
     var isRepeating = MutableLiveData(false)
     var isFavorite = MutableLiveData(false)
-    var currentActiveIndex = MutableLiveData(0)
+    var currentActiveIndex = MutableLiveData(-1)
     var currentProgress = MutableLiveData(0L)
     var mediaList = MutableLiveData(listOf<MediaData>())
     var fftChartData = MutableLiveData(FFTChartData())
     var spectrumChartData = MutableLiveData(FFTChartData())
+    var allMediaActiveMapData = MutableLiveData(mutableMapOf<Int, Boolean>())
     private val baseColor = ContextCompat.getColor(getApplication(), R.color.text_color_1_trans3)
+    private val idToListIndexMap = mutableMapOf<Int, Int>()
 
     private val player by lazy {
         FFTPlayer(
             context,
             onHandleBuffer = ::onHandleBuffer,
             onFullSpectrumReady = ::onFullSpectrumReady,
-            onPlaylistFinished = ::onPlaylistFinished
+            onPlaylistFinished = ::onPlaylistFinished,
+            onMediaSet = ::onMediaSet,
+            onPlayStatusChanged = ::onPlayStatusChanged,
         )
+    }
+
+    private fun onMediaSet(index: Int) {
+        setMedia(index)
+    }
+
+    private fun onPlayStatusChanged(isPlaying: Boolean) {
+        setPlayStatus(isPlaying)
     }
 
     private fun onFullSpectrumReady(bitmap: Bitmap) {
@@ -118,7 +132,6 @@ class PlayerModel @Inject constructor(
 
     private fun onPlaylistFinished() {
         pause()
-        currentProgress.value = 0
     }
 
     init {
@@ -128,7 +141,6 @@ class PlayerModel @Inject constructor(
             iter = LoopIterator(dataList)
 
             ui {
-                setStates(iter.value)
                 mediaList.value = dataList
             }
         }
@@ -152,31 +164,43 @@ class PlayerModel @Inject constructor(
         }
     }
 
-    private fun setStates(data: MediaData?) {
-        if (data == null || data.path.isEmpty()) {
+    private fun setStates(data: MediaData, playlistIndex: Int) {
+        if (data.path.isEmpty()) {
             return
         }
 
         previousData = currentData.value
         currentData.value = data
-        currentActiveIndex.value = iter.index
+//        currentActiveIndex.value = iter.index
+        currentActiveIndex.value = playlistIndex
 
         isFavorite.value = iter.value?.isFavorite
         currentProgress.value = 0
 
-        player.set(currentData.value!!.path)
+//        player.set(currentData.value!!.path)
+    }
+
+    private fun resetUi() {
+        currentData.value = MediaData.empty
+        currentActiveIndex.value = -1
+
+        currentProgress.value = 0
     }
 
     fun setMedia(index: Int) {
-        setStates(iter.setIndex(index))
+        if (playlist.value?.isEmpty() == true || playlist.value == null) {
+            resetUi()
+        } else {
+            setStates(playlist.value!![index], index)
+        }
     }
 
     fun prev() {
-        setStates(iter.prev())
+        player.prev()
     }
 
     fun next() {
-        setStates(iter.next())
+        player.next()
     }
 
     fun setSeekPosition(progress: Long) {
@@ -184,13 +208,21 @@ class PlayerModel @Inject constructor(
         player.seekTo(progress)
     }
 
-    fun start() {
-        isPlaying.value = true
-        player.prepareFifoBitmap(currentData.value!!.path, baseColor)
-        player.play()
+    private fun setPlayStatus(isPlayingValue: Boolean) {
+        isPlaying.value = isPlayingValue
 
-        requestCurrentPosition()
-//        player.requestFullSpectrum(currentData.value!!.path, baseColor)
+        if (isPlayingValue) {
+            player.prepareFifoBitmap(currentData.value!!.path, baseColor)
+            requestCurrentPosition()
+        }
+    }
+
+    fun play(auto: Boolean = false) {
+        if (player.isPlaying) {
+            pause()
+        }
+
+        player.play(auto)
     }
 
     fun pause() {
@@ -223,5 +255,66 @@ class PlayerModel @Inject constructor(
 
     fun showInfo(index: Int) {
 
+    }
+
+    fun removeFromPlaylist(index: Int, id: Int) {
+        val listIndex = idToListIndexMap.getOrDefault(id, -1)
+        if (listIndex >= 0) {
+            allMediaActiveMapData.value = allMediaActiveMapData.value?.apply {
+                "--> Removing index: $index; indexInPlaylist: $index".e
+                player.remove(index)
+                remove(listIndex)
+            }
+
+            updatePlaylist()
+        }
+    }
+
+    private fun updatePlaylist() {
+        playlist.value = player.getPlaylistIds().map {
+            iter.get(it)
+        }
+    }
+
+    fun setAsPlaylist(index: Int, id: Int) {
+        player.clearPlaylist()
+        allMediaActiveMapData.value = mutableMapOf()
+        idToListIndexMap.clear()
+
+        player.setAutoPlay(true)
+        addToPlaylist(index, id)
+    }
+
+    /*
+    * index - index in media RecyclerView
+    * */
+    fun addToPlaylist(index: Int, id: Int) {
+        val item = iter.get(index)
+        val path = item.path
+
+        val isAdded = allMediaActiveMapData.value?.getOrDefault(index, false)
+        allMediaActiveMapData.value = allMediaActiveMapData.value?.apply {
+            "--> index: $index; actualId: ${id} item: $path; isAdded: $isAdded".e
+
+            if (isAdded == true) {
+                "--> Removing index: $index; indexInPlaylist: $index".e
+                player.remove(index)
+                remove(index)
+                idToListIndexMap.remove(id)
+            } else {
+                "--> Adding index: $index".e
+                player.add(path, index)
+                put(index, true)
+                idToListIndexMap[id] = index
+            }
+        }
+
+        updatePlaylist()
+    }
+
+    fun seekToDefaultPosition(index: Int) {
+        player.setAutoPlay(true)
+        player.seekToDefaultPosition(index)
+        player.play(true)
     }
 }

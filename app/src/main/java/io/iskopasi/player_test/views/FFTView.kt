@@ -9,11 +9,11 @@ import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.Shader
 import android.util.AttributeSet
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import io.iskopasi.player_test.R
+import io.iskopasi.player_test.utils.spToPx
+import io.iskopasi.player_test.utils.toPx
 
 
 data class FFTChartData(
@@ -38,7 +38,7 @@ class FFTView @JvmOverloads constructor(
 
     private val gradient by lazy {
         LinearGradient(
-            0f, 0f, 0f, (height - 100.dp.value).toFloat(),
+            0f, 0f, 0f, (height - context.toPx(20)).toFloat(),
             ContextCompat.getColor(context, R.color.fft_bg),
             ContextCompat.getColor(context, R.color.trans), Shader.TileMode.CLAMP
         )
@@ -50,7 +50,7 @@ class FFTView @JvmOverloads constructor(
             strokeCap = Paint.Cap.ROUND
             strokeWidth = lineWidth
             isAntiAlias = true
-            textSize = 25.sp.value
+            textSize = context.spToPx(10)
             isDither = true
             shader = gradient
             isAntiAlias = true
@@ -58,24 +58,24 @@ class FFTView @JvmOverloads constructor(
     }
     private val paint by lazy {
         Paint().apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL
             color = ResourcesCompat.getColor(resources, R.color.text_color_1, null)
             strokeCap = Paint.Cap.ROUND
             strokeWidth = lineWidth
             isAntiAlias = true
-            textSize = 25.sp.value
+            textSize = context.spToPx(10)
             isDither = true
             isAntiAlias = true
         }
     }
     private val barPaint by lazy {
         Paint().apply {
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL
             color = ResourcesCompat.getColor(resources, R.color.text_color_1, null)
             strokeCap = Paint.Cap.ROUND
             strokeWidth = barWidth
             isAntiAlias = true
-            textSize = 25.sp.value
+            textSize = context.spToPx(10)
             isDither = true
             isAntiAlias = true
         }
@@ -83,14 +83,14 @@ class FFTView @JvmOverloads constructor(
     private var centerX = 0f
     private var centerY = 0f
     private var step = 0f
-    private val lineWidth = 2.dp.value
-    private val lOffset = 5.dp.value
+    private val lineWidth = 2f
+    private val lOffset = context.toPx(2)
     private val path = Path()
     private var yFactor = 0f
-    private var barWidth = 20.dp.value
-    private val labelOffset = 10.dp.value
-    private val xPadding = 60.dp.value
-    private val yPadding = 120.dp.value
+    private var barWidth = context.toPx(8)
+    private val labelOffset = context.toPx(2)
+    private val xPadding = context.toPx(25)
+    private val yPadding = context.toPx(40)
     private val bgRect = Rect(0, 0, 0, 0)
 
     var data = FFTChartData()

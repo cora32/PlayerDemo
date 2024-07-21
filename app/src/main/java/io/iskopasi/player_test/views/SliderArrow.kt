@@ -8,9 +8,9 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.ViewPropertyAnimator
 import android.view.animation.BounceInterpolator
-import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
 import io.iskopasi.player_test.R
+import io.iskopasi.player_test.utils.toPx
 import kotlin.math.max
 import kotlin.math.min
 
@@ -20,14 +20,14 @@ class SliderArrowHorizontal @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
     name: String = ""
-) : SliderArrow(context, attrs, defStyleAttr, 100.dp.value, 90.dp.value, name)
+) : SliderArrow(context, attrs, defStyleAttr, context.toPx(50), context.toPx(40), name)
 
 class SliderArrowVertical @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
     name: String = ""
-) : SliderArrow(context, attrs, defStyleAttr, 100.dp.value, 120.dp.value, name)
+) : SliderArrow(context, attrs, defStyleAttr, context.toPx(40), context.toPx(50), name)
 
 open class SliderArrow @JvmOverloads constructor(
     context: Context,
@@ -78,9 +78,9 @@ open class SliderArrow @JvmOverloads constructor(
     private var centerY = 0f
     private var endX = 0f
     private var endY = 0f
-    private var padding = 8.dp.value
-    private val maxXDeviation = 20.dp.value
-    private val maxYDeviation = 8.dp.value
+    private var padding = context.toPx(8)
+    private val maxXDeviation = context.toPx(5)
+    private val maxYDeviation = context.toPx(5)
 
     init {
         id = name.hashCode()

@@ -1,5 +1,6 @@
 package io.iskopasi.player_test.views
 
+import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.content.Context
@@ -14,13 +15,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.viewbinding.ViewBinding
 import androidx.window.layout.WindowMetricsCalculator
 import io.iskopasi.player_test.databinding.MenuLayoutBinding
 import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
+import io.iskopasi.player_test.utils.toPx
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.round
@@ -53,6 +54,8 @@ class SlidingContainer @JvmOverloads constructor(
     defStyleRes: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr, defStyleRes) {
     var menuOnPlay: ((Int) -> Unit)? = null
+    var menuOnAdd: ((Int) -> Unit)? = null
+    var menuOnRemove: ((Int) -> Unit)? = null
     var menuOnInfo: ((Int) -> Unit)? = null
     var menuOnShare: ((Int) -> Unit)? = null
 
@@ -88,8 +91,28 @@ class SlidingContainer @JvmOverloads constructor(
     private var maxXOffset = 0
     private var minYOffset = 0
     private var maxYOffset = 0
+    private var isAnimatingToAnotherScreen = false
     private var animationX: ValueAnimator = ValueAnimator.ofFloat()
     private var animationY: ValueAnimator = ValueAnimator.ofFloat()
+    private val topArrowOffset by lazy { context.toPx(20) }
+    private val bottomArrowOffset by lazy { context.toPx(20) }
+    private val animationEndListener = object : Animator.AnimatorListener {
+        override fun onAnimationStart(animation: Animator) {
+        }
+
+        override fun onAnimationEnd(animation: Animator) {
+            isAnimatingToAnotherScreen = false
+
+            setActualScreenData()
+        }
+
+        override fun onAnimationCancel(animation: Animator) {
+            isAnimatingToAnotherScreen = false
+        }
+
+        override fun onAnimationRepeat(animation: Animator) {
+        }
+    }
     private val gestureDetector by lazy {
         GestureDetector(context.applicationContext,
             object : GestureDetector.OnGestureListener {
@@ -103,6 +126,7 @@ class SlidingContainer @JvmOverloads constructor(
                 }
 
                 override fun onSingleTapUp(e: MotionEvent): Boolean {
+                    hideMenu()
                     return false
                 }
 
@@ -116,7 +140,7 @@ class SlidingContainer @JvmOverloads constructor(
                 }
 
                 override fun onLongPress(e: MotionEvent) {
-
+                    hideMenu()
                 }
 
                 override fun onFling(
@@ -146,7 +170,6 @@ class SlidingContainer @JvmOverloads constructor(
 
                             consume = true
                         } else {
-                            "-->y ${e1!!.y} ${e2.y} ".e
                             if (e2.y - e1!!.y > frameHeight / 2f) {
                                 goUp()
                             } else if (e1!!.y - e2!!.y > frameHeight / 2f) {
@@ -199,6 +222,7 @@ class SlidingContainer @JvmOverloads constructor(
 //        LayoutInflater.from(context.applicationContext).inflate(R.layout.menu_layout, this, false)
     }
     private var isActionDown = false
+    private var isInitialized = false
 
     init {
         isClickable = true
@@ -216,6 +240,78 @@ class SlidingContainer @JvmOverloads constructor(
         }
     }
 
+    fun initialize(screens: List<SlidingScreen<ViewBinding>>) {
+        isInitialized = false
+        val inflater = LayoutInflater.from(context)
+
+        for (screen in screens) {
+            val binding = screen.bindingInflater(inflater, this, true)
+            val view = binding.root
+
+            viewMap[screen.position.name] = view
+            bindingMap[binding::class] = binding
+
+            view.post {
+                // Place view in its place
+                val screenX =
+                    containerWidth / 2f - view.width / 2f + screen.position.xOffset * frameWidth + abs(
+                        x
+                    )
+                val screenY =
+                    containerHeight / 2f - view.height / 2f + screen.position.yOffset * frameHeight + abs(
+                        y
+                    )
+
+                // Saving views initial coordinates to be used as starting point in transitions
+                startXCoordMap[view] = screenX
+                startYCoordMap[view] = screenY
+
+                view.x = screenX
+                view.y = screenY
+                view.layoutParams = LayoutParams(frameWidth, frameHeight)
+
+                "--> Frame: $frameWidth, $frameHeight; ${view.x}, ${view.y}".e
+
+                // Placing navigational arrows at center after center screen got all its sizes
+                if (screen.position.name == SlidingScreenPosition.CENTER.name) {
+                    // Center screen coordinates used as starting point for arrows animations
+                    centerScreenInitialX = screenX
+                    centerScreenInitialY = screenY
+
+                    topArrow = getTopArrow(screenX, screenY)
+                    leftArrow = getLeftArrow(screenX, screenY)
+                    rightArrow = getRightArrow(screenX, screenY)
+                    bottomArrow = getBottomArrow(screenX, screenY)
+
+                    addView(topArrow)
+                    addView(leftArrow)
+                    addView(rightArrow)
+                    addView(bottomArrow)
+                }
+            }
+
+            // Find min and max offsets
+            findMinMaxOffsets(screen.position)
+        }
+
+        // Setting container width/height
+        adjustContainerSize()
+
+        // Setting viewport to center of container
+        x = -(containerWidth / 2f - frameWidth / 2f)
+        y = -(containerHeight / 2f - frameHeight / 2f)
+        "--> Setting initial coordinates to $x $y".e
+
+        // Initial container coordinates
+        oldRootX = x
+        oldRootY = y
+
+        // Adding menu layout
+        addView(menuBinding.root)
+
+        isInitialized = true
+    }
+
     private fun resetIndexes() {
         currentState = prevState
 
@@ -224,7 +320,11 @@ class SlidingContainer @JvmOverloads constructor(
         yScreenIndex = prevState.yOffset + 1
     }
 
-    fun processTouchEvent(event: MotionEvent) {
+    private fun processTouchEvent(event: MotionEvent) {
+        if (!isInitialized) return
+
+        val consumed = gestureDetector.onTouchEvent(event)
+
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 isActionDown = true
@@ -255,7 +355,6 @@ class SlidingContainer @JvmOverloads constructor(
 
             MotionEvent.ACTION_UP -> {
                 isActionDown = false
-                val consumed = gestureDetector.onTouchEvent(event)
 
                 if (!consumed) {
                     if (tempDeltaX > deltaThreshold) {
@@ -288,29 +387,18 @@ class SlidingContainer @JvmOverloads constructor(
                         bottomArrow?.hide()
                     }
                 }
+
+                tempDeltaX = 0f
+                tempDeltaY = 0f
             }
         }
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        "slider: onTouchEvent: ${event.action}  ${event.rawX}".e
-
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         processTouchEvent(event)
 
-        return true
+        return super.dispatchTouchEvent(event)
     }
-
-
-//    override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
-//        "slider: onInterceptTouchEvent: ${event.action}".e
-//
-//        processTouchEvent(event)
-//
-////        super.onInterceptTouchEvent(event)
-//
-//        return false
-//    }
-
 
     private fun toggleArrows() {
         when (currentState) {
@@ -342,7 +430,13 @@ class SlidingContainer @JvmOverloads constructor(
                 bottomArrow?.hide()
             }
 
-            SlidingScreenPosition.BOTTOM -> TODO()
+            SlidingScreenPosition.BOTTOM -> {
+                leftArrow?.hide()
+                topArrow?.hide()
+                rightArrow?.hide()
+                bottomArrow?.show()
+            }
+
             SlidingScreenPosition.TOP_LEFT -> TODO()
             SlidingScreenPosition.TOP_RIGHT -> TODO()
             SlidingScreenPosition.BOTTOM_RIGHT -> TODO()
@@ -356,12 +450,11 @@ class SlidingContainer @JvmOverloads constructor(
 
         "--> Animating from $prevState to $currentState $xScreenIndex $yScreenIndex".e
 
-        if (prevState != currentState) {
-            hideMenu()
-        }
+        isAnimatingToAnotherScreen = prevState != currentState
 
         AnimatorSet().apply {
             playTogether(animationX, animationY)
+            addListener(animationEndListener)
             start()
         }
     }
@@ -528,17 +621,18 @@ class SlidingContainer @JvmOverloads constructor(
             view.y = startYCoordMap[view]!! + deltaY - parallaxDeltaY
         }
 
-        val currentY = frameHeight - centerScreenInitialY + deltaY - frameHeight / 2f
+        val currentY = frameHeight - centerScreenInitialY + deltaY
         val fraction = currentY / frameHeight
 
         // Moving arrows on y-axis
         topArrow?.let {
             it.y =
-                it.initialY + deltaY - parallaxDeltaY - fraction * (arrowTransitionHeight - 80.dp.value)
+                it.initialY + deltaY - parallaxDeltaY - fraction * (arrowTransitionHeight - topArrowOffset)
             it.flingY(deltaY)
         }
         bottomArrow?.let {
-            it.y = it.initialY + deltaY - parallaxDeltaY - fraction * arrowTransitionHeight
+            it.y =
+                it.initialY + deltaY - parallaxDeltaY - fraction * (arrowTransitionHeight - bottomArrowOffset)
             it.flingY(deltaY)
         }
     }
@@ -556,79 +650,10 @@ class SlidingContainer @JvmOverloads constructor(
 
     inline fun <reified T : ViewBinding> getBinding(): T = bindingMap[T::class] as T
 
-    fun initialize(screens: List<SlidingScreen<ViewBinding>>) {
-        val inflater = LayoutInflater.from(context)
-
-        for (screen in screens) {
-            val binding = screen.bindingInflater(inflater, this, true)
-            val view = binding.root
-
-            viewMap[screen.position.name] = view
-            bindingMap[binding::class] = binding
-
-            view.post {
-                // Place view in its place
-                val screenX =
-                    containerWidth / 2f - view.width / 2f + screen.position.xOffset * frameWidth + abs(
-                        x
-                    )
-                val screenY =
-                    containerHeight / 2f - view.height / 2f + screen.position.yOffset * frameHeight + abs(
-                        y
-                    )
-
-                // Saving views initial coordinates to be used as starting point in transitions
-                startXCoordMap[view] = screenX
-                startYCoordMap[view] = screenY
-
-                view.x = screenX
-                view.y = screenY
-                view.layoutParams = LayoutParams(frameWidth, frameHeight)
-
-                "--> Frame: $frameWidth, $frameHeight; ${view.x}, ${view.y}".e
-
-                // Placing navigational arrows at center after center screen got all its sizes
-                if (screen.position.name == SlidingScreenPosition.CENTER.name) {
-                    // Center screen coordinates used as starting point for arrows animations
-                    centerScreenInitialX = screenX
-                    centerScreenInitialY = screenY
-
-                    topArrow = getTopArrow(screenX, screenY)
-                    leftArrow = getLeftArrow(screenX, screenY)
-                    rightArrow = getRightArrow(screenX, screenY)
-                    bottomArrow = getBottomArrow(screenX, screenY)
-
-                    addView(topArrow)
-                    addView(leftArrow)
-                    addView(rightArrow)
-                    addView(bottomArrow)
-                }
-            }
-
-            // Find min and max offsets
-            findMinMaxOffsets(screen.position)
-        }
-
-        // Setting container width/height
-        adjustContainerSize()
-
-        // Setting viewport to center of container
-        x = -(containerWidth / 2f - frameWidth / 2f)
-        y = -(containerHeight / 2f - frameHeight / 2f)
-        "--> Setting initial coordinates to $x $y".e
-
-        // Initial container coordinates
-        oldRootX = x
-        oldRootY = y
-
-        // Adding menu layout
-        addView(menuBinding.root)
-    }
-
     private fun getTopArrow(centerScreenX: Float, centerScreenY: Float): SliderArrow =
         SliderArrowHorizontal(context, name = "top").apply {
             x = centerScreenX + frameWidth / 2f - width / 2f
-            y = centerScreenY + arrowTransitionHeight / 2f - height / 2f - 50.dp.value
+            y = centerScreenY + arrowTransitionHeight / 2f - height / 2f - context.toPx(10)
 
             initialX = x
             initialY = y
@@ -735,21 +760,65 @@ class SlidingContainer @JvmOverloads constructor(
 
     fun showMenu(event: MotionEvent, index: Int) {
         val menuView = menuBinding.root
+        menuView.visibility = GONE
+        var menuHeight = 0f
 
-        menuBinding.menu1.setOnClickListener {
+        if (menuOnPlay != null) {
+            menuBinding.menuPlay.visibility = VISIBLE
+            menuHeight += context.toPx(60)
+        }
+        if (menuOnAdd != null) {
+            menuBinding.menuAddToPlaylist.visibility = VISIBLE
+            menuBinding.d1.visibility = VISIBLE
+            menuHeight += context.toPx(61)
+        }
+        if (menuOnRemove != null) {
+            menuBinding.menuRemoveFromPlaylist.visibility = VISIBLE
+            menuBinding.d2.visibility = VISIBLE
+            menuHeight += context.toPx(61)
+        }
+        if (menuOnInfo != null) {
+            menuBinding.menuInfo.visibility = VISIBLE
+            menuBinding.d3.visibility = VISIBLE
+            menuHeight += context.toPx(61)
+        }
+        if (menuOnShare != null) {
+            menuBinding.menuShare.visibility = VISIBLE
+            menuBinding.d4.visibility = VISIBLE
+            menuHeight += context.toPx(61)
+        }
+
+        menuBinding.menuPlay.setOnClickListener {
             menuOnPlay?.invoke(index)
             hideMenu()
         }
-        menuBinding.menu2.setOnClickListener {
+        menuBinding.menuAddToPlaylist.setOnClickListener {
+            menuOnAdd?.invoke(index)
+            hideMenu()
+        }
+        menuBinding.menuRemoveFromPlaylist.setOnClickListener {
+            menuOnRemove?.invoke(index)
+            hideMenu()
+        }
+        menuBinding.menuInfo.setOnClickListener {
             menuOnInfo?.invoke(index)
             hideMenu()
         }
-        menuBinding.menu3.setOnClickListener {
+        menuBinding.menuShare.setOnClickListener {
             menuOnShare?.invoke(index)
             hideMenu()
         }
 
-        menuView.visibility = GONE
+        val menuWidth = menuView.width
+
+        // Setting size to 0 to animate to actual size
+        menuView.layoutParams.width = 0
+        menuView.layoutParams.height = 0
+
+        setMenuPosition(event)
+        setMenuSize(menuWidth, menuHeight.toInt())
+
+        menuView.visibility = VISIBLE
 
         // Vibrate on menu show
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -757,19 +826,6 @@ class SlidingContainer @JvmOverloads constructor(
         } else {
             vibrator?.vibrate(50L)
         }
-
-        // Saving actual size
-        val menuWidth = menuView.width
-        val menuHeight = menuView.height
-
-        // Setting size to 0 to animate to actual size
-        menuView.layoutParams.width = 0
-        menuView.layoutParams.height = 0
-
-        menuView.visibility = VISIBLE
-
-        setMenuPosition(event)
-        setMenuSize(menuWidth, menuHeight)
     }
 
     fun hideMenu() {
@@ -777,5 +833,32 @@ class SlidingContainer @JvmOverloads constructor(
         if (menuView.visibility != GONE) {
             menuView.visibility = GONE
         }
+    }
+
+    fun canPressButtons(): Boolean {
+        return tempDeltaX == 0f && tempDeltaY == 0f
+                && !isAnimatingToAnotherScreen
+    }
+
+    fun setActualScreenData() {
+        viewMap[SlidingScreenPosition.CENTER.name]?.let { centerView ->
+            xScreenIndex =
+                ((centerScreenInitialX - centerView.x - parallaxDeltaX) / frameWidth + 1).toInt()
+            yScreenIndex =
+                ((centerScreenInitialY - centerView.y - parallaxDeltaY) / frameHeight + 1).toInt()
+
+            currentState = positionMap[yScreenIndex][xScreenIndex]
+            prevState = currentState
+
+            "setActualScreenData: $xScreenIndex $yScreenIndex".e
+        }
+    }
+
+    fun removeMenuActions() {
+        menuOnPlay = null
+        menuOnAdd = null
+        menuOnRemove = null
+        menuOnInfo = null
+        menuOnShare = null
     }
 }

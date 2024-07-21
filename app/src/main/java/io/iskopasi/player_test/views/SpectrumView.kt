@@ -3,13 +3,9 @@ package io.iskopasi.player_test.views
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import io.iskopasi.player_test.R
 
 
@@ -18,25 +14,10 @@ class SpectrumView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
 ) : FFTBaseView(context, attrs, defStyleAttr) {
-    companion object {
-        const val MAX_DISPLAYED_SAMPLES = 100
-    }
-    private val paint by lazy {
-        Paint().apply {
-            style = Paint.Style.STROKE
-            color = ResourcesCompat.getColor(resources, R.color.text_color_1_trans, null)
-            strokeCap = Paint.Cap.ROUND
-            strokeWidth = lineWidth
-            isAntiAlias = true
-            textSize = 25.sp.value
-        }
-    }
     private var bg = ContextCompat.getColor(context, R.color.fft_bg)
     private var centerX = 0f
     private var centerY = 0f
-    private val lineWidth = 2.dp.value
     private var resizeRect = RectF()
-    private var columnWidth = 5.dp.value
     private var bitmap: Bitmap? = null
         set(value) {
             field = value
@@ -60,7 +41,6 @@ class SpectrumView @JvmOverloads constructor(
         centerX = width / 2f
         centerY = height / 2f
 
-        columnWidth = width / MAX_DISPLAYED_SAMPLES.toFloat()
         resizeRect.apply {
             left = 0f
             top = 0f
@@ -72,7 +52,7 @@ class SpectrumView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         canvas.drawColor(bg)
 
-        if (bitmap == null) {
+        if (bitmap == null || bitmap!!.isRecycled) {
             drawNoData(
                 canvas,
                 centerX - textWidth / 2f,

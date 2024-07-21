@@ -10,6 +10,7 @@ import android.graphics.Canvas
 import android.media.AudioManager
 import android.media.MediaMetadataRetriever
 import android.util.Log
+import android.util.TypedValue
 import android.view.View
 import android.webkit.MimeTypeMap
 import androidx.core.content.ContextCompat
@@ -179,3 +180,21 @@ val Context.musicVolumeFlow
         registerReceiver(receiver, IntentFilter("android.media.VOLUME_CHANGED_ACTION"))
         awaitClose { unregisterReceiver(receiver) }
     }
+
+fun Context.toPx(dp: Int): Float = TypedValue.applyDimension(
+    TypedValue.COMPLEX_UNIT_DIP,
+    dp.toFloat(),
+    resources.displayMetrics
+)
+
+fun Context.spToPx(dp: Int): Float = TypedValue.applyDimension(
+    TypedValue.COMPLEX_UNIT_DIP,
+    dp.toFloat(),
+    resources.displayMetrics
+)
+
+fun Context.spToPx(sp: Float) = TypedValue.applyDimension(
+    TypedValue.COMPLEX_UNIT_SP,
+    sp,
+    resources.displayMetrics
+)

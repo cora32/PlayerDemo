@@ -203,7 +203,7 @@ fun MainFragment.setupCenter(
         if (model.isPlaying.value!!) {
             model.pause()
         } else {
-            model.start()
+            model.play()
         }
     }
 

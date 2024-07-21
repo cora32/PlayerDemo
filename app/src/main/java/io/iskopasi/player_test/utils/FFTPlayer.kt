@@ -3,7 +3,6 @@ package io.iskopasi.player_test.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Handler
-import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.audio.AudioProcessor.EMPTY_BUFFER
@@ -41,7 +40,9 @@ class FFTPlayer(
     onFullSpectrumReady: (
         Bitmap,
     ) -> Unit,
-    onPlaylistFinished: () -> Unit
+    onPlayStatusChanged: (Boolean) -> Unit,
+    onPlaylistFinished: () -> Unit,
+    onMediaSet: (Int) -> Unit
 ) {
     private var fifoBitmap: FifoBitmap? = null
 
@@ -52,6 +53,7 @@ class FFTPlayer(
     private val listener by lazy {
         object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
+                "->> onIsPlayingChanged onIsPlayingChanged onIsPlayingChanged: $isPlaying".e
                 if (isPlaying) {
 //                    onPlaylistStarted()
                 } else {
@@ -64,19 +66,26 @@ class FFTPlayer(
                 }
             }
 
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                super.onPlaybackStateChanged(playbackState)
-
-                when (playbackState) {
-                    Player.STATE_IDLE -> {}
-                    Player.STATE_BUFFERING -> {}
-                    Player.STATE_READY -> {}
-                    Player.STATE_ENDED -> {}
-                }
-            }
+//            override fun onPlaybackStateChanged(playbackState: Int) {
+//                super.onPlaybackStateChanged(playbackState)
+//
+//                when (playbackState) {
+//                    Player.STATE_IDLE -> {}
+//                    Player.STATE_BUFFERING -> {}
+//                    Player.STATE_READY -> {}
+//                    Player.STATE_ENDED -> {}
+//                }
+//            }
 
             override fun onEvents(player: Player, events: Player.Events) {
                 super.onEvents(player, events)
+
+                if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) {
+                    onMediaSet(player.currentMediaItemIndex)
+                } else if (events.contains(Player.EVENT_IS_PLAYING_CHANGED)) {
+                    onPlayStatusChanged(isPlaying)
+                }
+
 //                if (
 //                    events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
 //                    events.contains(Player.EVENT_PLAY_WHEN_READY_CHANGED)
@@ -281,21 +290,60 @@ class FFTPlayer(
         player.prepare()
     }
 
-    fun play() {
+    fun prepare() {
+        player.prepare()
+    }
+
+    fun play(auto: Boolean = false): MediaItem? {
+        player.playWhenReady = auto
+
         player.play()
+        return player.currentMediaItem
     }
 
-    fun next() {
+    fun seekToDefaultPosition(index: Int) {
+        player.seekToDefaultPosition(index)
+    }
+
+    fun next(): Int {
         player.seekToNextMediaItem()
+        return player.currentMediaItemIndex
     }
 
-    fun prev() {
+    fun prev(): Int {
         player.seekToPreviousMediaItem()
+        return player.currentMediaItemIndex
     }
 
-    fun set(uri: String) {
-        player.setMediaItem(MediaItem.fromUri(uri))
-//        player.addMediaItem(MediaItem.fromUri(uri))
+//    fun set(uri: String, indexInMedia: Int) {
+//        val item = MediaItem.Builder()
+//            .setMediaId(indexInMedia.toString())
+//            .setUri(uri)
+//            .build()
+//        player.setMediaItem(item)
+//    }
+
+    fun add(uri: String, indexInMedia: Int) {
+        val item = MediaItem.Builder()
+            .setMediaId(indexInMedia.toString())
+            .setUri(uri)
+            .build()
+        player.addMediaItem(item)
+
+        return
+    }
+
+    fun remove(index: Int) {
+        player.removeMediaItem(index)
+    }
+
+    fun getPlaylistIds(): List<Int> {
+        val result = mutableListOf<Int>()
+        for (i in 0 until player.mediaItemCount) {
+            result.add(player.getMediaItemAt(i).mediaId.toInt())
+        }
+
+        return result
     }
 
     fun pause() {
@@ -327,12 +375,19 @@ class FFTPlayer(
         val bufferSize = width.toInt() * height * 2
 
         fifoBitmap = FifoBitmap(
-            bufferSize.toInt(),
-            min(width.toInt(), 500.dp.value.toInt()),
+            bufferSize,
+            min(width.toInt(), 500),
             height,
             baseColor
         )
     }
 
     fun getCurrentPosition() = player.currentPosition
+    fun clearPlaylist() {
+        player.clearMediaItems()
+    }
+
+    fun setAutoPlay(auto: Boolean) {
+        player.playWhenReady = auto
+    }
 }
