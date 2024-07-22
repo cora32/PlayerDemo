@@ -6,6 +6,9 @@ import android.content.Context
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.util.AttributeSet
+import android.view.MotionEvent
+import android.view.MotionEvent.ACTION_DOWN
+import android.view.MotionEvent.ACTION_UP
 import androidx.core.content.res.ResourcesCompat
 import io.iskopasi.player_test.R
 
@@ -14,6 +17,7 @@ class AnimatedSeekBarView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : androidx.appcompat.widget.AppCompatSeekBar(context, attrs, defStyleAttr) {
+    lateinit var interceptTouches: (Boolean) -> Unit
     private var oldColor: Int =
         ResourcesCompat.getColor(context.resources, R.color.gradient_end, null)
 
@@ -35,5 +39,19 @@ class AnimatedSeekBarView @JvmOverloads constructor(
         }
 
         oldColor = newColor
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        when (event.action) {
+            ACTION_DOWN -> {
+                interceptTouches(true)
+            }
+
+            ACTION_UP -> {
+                interceptTouches(false)
+            }
+        }
+
+        return super.onTouchEvent(event)
     }
 }

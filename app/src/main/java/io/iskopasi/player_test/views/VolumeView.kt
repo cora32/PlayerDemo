@@ -33,8 +33,9 @@ class VolumeView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-    defStyleRes: Int = 0
+    defStyleRes: Int = 0,
 ) : View(context, attrs, defStyleAttr, defStyleRes), OnTouchListener {
+    lateinit var interceptTouches: (Boolean) -> Unit
     private val vibrator by lazy {
         ContextCompat.getSystemService(
             context.applicationContext,
@@ -131,6 +132,7 @@ class VolumeView @JvmOverloads constructor(
     private var lastVibrationTime = 0L
     private val rect = RectF()
     private val rect1 = Rect()
+    private val outerScaleAngleOffset = 43
 
     init {
         setOnTouchListener(this)
@@ -139,6 +141,7 @@ class VolumeView @JvmOverloads constructor(
         bg {
             context.applicationContext.musicVolumeFlow.collect {
                 volumeAngle = it.toAngle()
+                yThreshold = (volumeAngle + outerScaleAngleOffset).toThreshold()
 
                 ui {
                     invalidate()
@@ -161,7 +164,7 @@ class VolumeView @JvmOverloads constructor(
         rect.bottom = height.toFloat()
 
         distance = offsetX + iconSize / 2f + endPadding
-        yThreshold = (volumeAngle + 43).toThreshold()
+        yThreshold = (volumeAngle + outerScaleAngleOffset).toThreshold()
 
         setMeasuredDimension(width, height)
     }
@@ -222,36 +225,37 @@ class VolumeView @JvmOverloads constructor(
         }
     }
 
-    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-        event?.apply {
-            when (action) {
-                ACTION_DOWN -> {
-                    // If tap on volume_off - set min value
-                    if (y > height - 100) {
-                        allowDraw = false
-                        volumeAngle = 0f
-                        yThreshold = Float.MAX_VALUE // Reducing outer scale
+    override fun onTouch(v: View?, event: MotionEvent): Boolean {
+        when (event.action) {
+            ACTION_DOWN -> {
+                interceptTouches(true)
 
-                        // set volume
-                        adjustVolume(volumeAngle)
-
-                        invalidate()
-                    } else {
-                        allowDraw = x > centerX
-
-                        performDraw(y)
-                    }
-                }
-
-                ACTION_MOVE -> {
-                    if (allowDraw) {
-                        performDraw(y)
-                    }
-                }
-
-                ACTION_UP -> {
+                // If tap on volume_off - set min value
+                if (event.y > height - 100) {
                     allowDraw = false
+                    volumeAngle = 0f
+                    yThreshold = Float.MAX_VALUE // Reducing outer scale
+
+                    // set volume
+                    adjustVolume(volumeAngle)
+
+                    invalidate()
+                } else {
+                    allowDraw = event.x > centerX
+
+                    performDraw(event.y)
                 }
+            }
+
+            ACTION_MOVE -> {
+                if (allowDraw) {
+                    performDraw(event.y)
+                }
+            }
+
+            ACTION_UP -> {
+                interceptTouches(false)
+                allowDraw = false
             }
         }
 
@@ -267,7 +271,7 @@ class VolumeView @JvmOverloads constructor(
             volumeAngle = 0f
         }
 
-        yThreshold = (volumeAngle + 43).toThreshold()
+        yThreshold = (volumeAngle + outerScaleAngleOffset).toThreshold()
 
         // set volume
         adjustVolume(volumeAngle)

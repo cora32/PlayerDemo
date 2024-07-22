@@ -59,6 +59,7 @@ class SlidingContainer @JvmOverloads constructor(
     var menuOnInfo: ((Int) -> Unit)? = null
     var menuOnShare: ((Int) -> Unit)? = null
 
+    private var isFlinging = false
     private var oldRootX = 0f
     private var oldRootY = 0f
     private var startX = 0f
@@ -92,6 +93,7 @@ class SlidingContainer @JvmOverloads constructor(
     private var minYOffset = 0
     private var maxYOffset = 0
     private var isAnimatingToAnotherScreen = false
+    private var isIntercepting = false
     private var animationX: ValueAnimator = ValueAnimator.ofFloat()
     private var animationY: ValueAnimator = ValueAnimator.ofFloat()
     private val topArrowOffset by lazy { context.toPx(20) }
@@ -102,6 +104,7 @@ class SlidingContainer @JvmOverloads constructor(
 
         override fun onAnimationEnd(animation: Animator) {
             isAnimatingToAnotherScreen = false
+            isFlinging = false
 
             setActualScreenData()
         }
@@ -177,6 +180,8 @@ class SlidingContainer @JvmOverloads constructor(
                             }
                         }
                     }
+
+                    if (consume) isFlinging = true
 
                     return consume
                 }
@@ -395,7 +400,7 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
-        processTouchEvent(event)
+        if (!isIntercepting) processTouchEvent(event)
 
         return super.dispatchTouchEvent(event)
     }
@@ -444,7 +449,17 @@ class SlidingContainer @JvmOverloads constructor(
         }
     }
 
-    private fun runAnimations() {
+    private fun runAnimations(cancel: Boolean = false) {
+        if (cancel) {
+            animationX.cancel()
+            animationY.cancel()
+        }
+
+        if (animationX.isRunning
+            || animationY.isRunning
+        )
+            return
+
         animationX = getXAnimator()
         animationY = getYAnimator()
 
@@ -841,16 +856,36 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     fun setActualScreenData() {
+        if (isAnimatingToAnotherScreen) return
+
         viewMap[SlidingScreenPosition.CENTER.name]?.let { centerView ->
             xScreenIndex =
-                ((centerScreenInitialX - centerView.x - parallaxDeltaX) / frameWidth + 1).toInt()
+                ((centerScreenInitialX - centerView.x - parallaxDeltaX) / frameWidth).toInt() + 1
             yScreenIndex =
-                ((centerScreenInitialY - centerView.y - parallaxDeltaY) / frameHeight + 1).toInt()
+                ((centerScreenInitialY - centerView.y - parallaxDeltaY) / frameHeight).toInt() + 1
 
-            currentState = positionMap[yScreenIndex][xScreenIndex]
-            prevState = currentState
+            if (xScreenIndex < 0) {
+                xScreenIndex = 0
+            }
+            if (yScreenIndex < 0) {
+                yScreenIndex = 0
+            }
+            if (xScreenIndex >= positionMap.size) {
+                xScreenIndex = positionMap.size - 1
+            }
+            if (yScreenIndex >= positionMap.size) {
+                yScreenIndex = positionMap.size - 1
+            }
 
-            "setActualScreenData: $xScreenIndex $yScreenIndex".e
+            val isIdleX = (centerScreenInitialX - centerView.x - parallaxDeltaX) % frameWidth == 0f
+            val isIdleY = (centerScreenInitialY - centerView.y - parallaxDeltaY) % frameHeight == 0f
+
+            if (isIdleX && isIdleY) {
+                currentState = positionMap[yScreenIndex][xScreenIndex]
+                prevState = currentState
+
+                "setActualScreenData: $xScreenIndex $yScreenIndex".e
+            }
         }
     }
 
@@ -860,5 +895,19 @@ class SlidingContainer @JvmOverloads constructor(
         menuOnRemove = null
         menuOnInfo = null
         menuOnShare = null
+    }
+
+    fun interceptTouches(intercept: Boolean) {
+        isIntercepting = intercept
+    }
+
+    fun goToRight() {
+        if (isFlinging) return
+
+        prevState = currentState
+        goRight()
+        currentState = positionMap[yScreenIndex][xScreenIndex]
+
+        runAnimations(true)
     }
 }

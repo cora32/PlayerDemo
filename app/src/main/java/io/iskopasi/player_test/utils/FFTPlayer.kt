@@ -48,6 +48,7 @@ class FFTPlayer(
     onFlush: (Int, Int, String) -> Unit,
 ) {
     private var fifoBitmap: FifoBitmap? = null
+    private var allowPlayingStateChange = true
 
     companion object {
         const val SAMPLE_SIZE = 4096
@@ -56,7 +57,6 @@ class FFTPlayer(
     private val listener by lazy {
         object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                "->> onIsPlayingChanged onIsPlayingChanged onIsPlayingChanged: $isPlaying".e
                 if (isPlaying) {
 //                    onPlaylistStarted()
                 } else {
@@ -65,7 +65,7 @@ class FFTPlayer(
                     // player.playbackState, player.playbackSuppressionReason and
                     // player.playerError for details.
 
-                    onPlaylistFinished()
+                    if (allowPlayingStateChange) onPlaylistFinished()
                 }
             }
 
@@ -84,9 +84,9 @@ class FFTPlayer(
                 super.onEvents(player, events)
 
                 if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) {
-                    onMediaSet(player.currentMediaItemIndex)
+                    if (allowPlayingStateChange) onMediaSet(player.currentMediaItemIndex)
                 } else if (events.contains(Player.EVENT_IS_PLAYING_CHANGED)) {
-                    onPlayStatusChanged(isPlaying)
+                    if (allowPlayingStateChange) onPlayStatusChanged(isPlaying)
                 }
 
 //                if (
@@ -373,21 +373,19 @@ class FFTPlayer(
             .setUri(uri)
             .build()
         player.addMediaItem(item)
-
-        return
     }
 
     fun remove(index: Int) {
         player.removeMediaItem(index)
     }
 
-    fun getPlaylistIds(): List<Int> {
-        val result = mutableListOf<Int>()
+    fun getIdToPlaylistIndexMap(): MutableMap<Int, Int> {
+        val map = mutableMapOf<Int, Int>()
         for (i in 0 until player.mediaItemCount) {
-            result.add(player.getMediaItemAt(i).mediaId.toInt())
+            map[player.getMediaItemAt(i).mediaId.toInt()] = i
         }
 
-        return result
+        return map
     }
 
     fun pause() {
@@ -403,7 +401,14 @@ class FFTPlayer(
     }
 
     fun seekTo(progress: Long) {
+        allowPlayingStateChange = false
+        val wasPlaying = isPlaying
         player.seekTo(progress)
+        allowPlayingStateChange = true
+
+        // seekTo() interrupts playing: https://github.com/google/ExoPlayer/issues/11058
+        // So restarting manually
+        if (wasPlaying) player.play()
     }
 
     fun requestFullSpectrum(path: String, baseColor: Int) = bg {
@@ -432,8 +437,11 @@ class FFTPlayer(
     }
 
     fun setAutoPlay(auto: Boolean) {
+        "Setting setAutoPlay: $auto".e
         player.playWhenReady = auto
     }
 
     fun extractMetadata(path: String): MediaMetadata = extractor.extractMetadata(path)
+
+    fun isLastMedia(): Boolean = player.currentMediaItemIndex == player.mediaItemCount - 1
 }

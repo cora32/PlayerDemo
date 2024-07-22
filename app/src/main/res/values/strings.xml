@@ -15,6 +15,7 @@
     <string name="media_list">Media</string>
     <string name="playlist">Playlist</string>
     <string name="empty_playlist">Playlist is empty</string>
+    <string name="empty_playlist_directive">Create playlist on Media screen ➜</string>
     <string name="stats_list">Stats</string>
     <string name="freqs">Frequencies (Hz)</string>
     <string name="bitrate">Bitrate</string>

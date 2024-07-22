@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 
 @Entity
 data class MediaDataEntity(
-    @PrimaryKey(autoGenerate = true) val uid: Int,
+    @PrimaryKey(autoGenerate = true) val uid: Int = -1,
+    @ColumnInfo(index = true, name = "media_id") val mediaId: Int = -1,
     @ColumnInfo(name = "is_favorite") val isFavorite: Boolean
 )

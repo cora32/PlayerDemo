@@ -3,8 +3,10 @@ package io.iskopasi.player_test.fragments
 import android.graphics.Bitmap
 import android.graphics.drawable.AnimatedVectorDrawable
 import android.text.format.DateUtils
+import android.view.View.OnClickListener
 import android.widget.SeekBar
 import androidx.annotation.OptIn
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
 import com.bumptech.glide.Glide
@@ -17,6 +19,7 @@ import io.iskopasi.player_test.databinding.FragmentMainBinding
 import io.iskopasi.player_test.databinding.FragmentScreenMainBinding
 import io.iskopasi.player_test.models.MediaData
 import io.iskopasi.player_test.models.PlayerModel
+import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.getAccent
 import io.iskopasi.player_test.utils.toBitmap
 import jp.wasabeef.glide.transformations.BlurTransformation
@@ -30,6 +33,58 @@ fun MainFragment.setupCenter(
     binding: FragmentScreenMainBinding,
     rootBinding: FragmentMainBinding
 ) {
+    var isEmpty = true
+    val goToMedia = OnClickListener {
+        rootBinding.container.goToRight()
+    }
+
+    fun disableControls() {
+        binding.controls.root.isClickable = true
+        binding.controls.b1.isClickable = false
+        binding.controls.b2.isClickable = false
+        binding.controls.b3.isClickable = false
+        binding.controls.b4.isClickable = false
+        binding.controls.b5.isClickable = false
+        binding.controls.seekBar.isClickable = false
+
+//        val color = ContextCompat.getColor(requireActivity(), R.color.trans)
+//
+//        binding.btnLike.setColorFilter(color)
+//        binding.btnShare.setColorFilter(color)
+//        binding.controls.b1.setColorFilter(color)
+//        binding.controls.b2.setColorFilter(color)
+//        binding.controls.b3.setColorFilter(color)
+//        binding.controls.b4.setColorFilter(color)
+//        binding.controls.b5.setColorFilter(color)
+
+        binding.controls.root.setOnClickListener(goToMedia)
+        binding.tv.setOnClickListener(goToMedia)
+        binding.tv2.setOnClickListener(goToMedia)
+    }
+
+    fun enableControls() {
+        binding.controls.root.isClickable = false
+        binding.controls.b1.isClickable = true
+        binding.controls.b2.isClickable = true
+        binding.controls.b3.isClickable = true
+        binding.controls.b4.isClickable = true
+        binding.controls.b5.isClickable = true
+        binding.controls.seekBar.isClickable = true
+
+//        val color = ContextCompat.getColor(requireActivity(), R.color.white)
+//
+//        binding.btnLike.setColorFilter(color)
+//        binding.btnShare.setColorFilter(color)
+//        binding.controls.b1.setColorFilter(color)
+//        binding.controls.b2.setColorFilter(color)
+//        binding.controls.b3.setColorFilter(color)
+//        binding.controls.b4.setColorFilter(color)
+//        binding.controls.b5.setColorFilter(color)
+
+        binding.controls.root.setOnClickListener(null)
+        binding.tv.setOnClickListener(null)
+        binding.tv2.setOnClickListener(null)
+    }
 
     fun setFavoriteResource(isFavorite: Boolean) {
         if (isFavorite) {
@@ -102,21 +157,35 @@ fun MainFragment.setupCenter(
     }
 
     fun loadData(data: MediaData) {
-//        Glide.with(requireContext().applicationContext).clear(binding.image)
-//        Glide.with(requireContext().applicationContext).clear(rootBinding.bgInclude.imageBg)
+        isEmpty = data.path.isEmpty()
 
         lifecycleScope.launch(Dispatchers.IO) {
             val bitmap = data.path.toBitmap
 
+            // Has to be run on UI
             lifecycleScope.launch {
                 if (bitmap != null) setBitmap(bitmap) else setImageResource(data)
             }
         }
 
-        binding.tv.text = data.name
-        binding.tv2.text = data.subtitle
+        setFavoriteResource(data.isFavorite)
+
+        if (isEmpty) {
+            binding.tv.text = ContextCompat.getString(requireActivity(), R.string.empty_playlist)
+            binding.tv2.text =
+                ContextCompat.getString(requireActivity(), R.string.empty_playlist_directive)
+
+            disableControls()
+        } else {
+            binding.tv.text = data.name
+            binding.tv2.text = data.subtitle
+
+            enableControls()
+        }
+
         binding.controls.seekBar.max = data.duration
-        binding.controls.timerEnd.text = DateUtils.formatElapsedTime(data.duration.toLong() / 1000L)
+        binding.controls.timerEnd.text =
+            DateUtils.formatElapsedTime(data.duration.toLong() / 1000L)
 
         data.imageId.getAccent(requireContext().applicationContext, data.path) {
             it?.let {
@@ -125,8 +194,6 @@ fun MainFragment.setupCenter(
 //                binding.controls.seekBar.setColor(it)
             }
         }
-
-        setFavoriteResource(data.isFavorite)
     }
 
 //        binding.controls.seekBar.setColor(
@@ -136,6 +203,13 @@ fun MainFragment.setupCenter(
 //                null
 //            )
 //        )
+    binding.volumeView.interceptTouches = { intercept ->
+        rootBinding.container.interceptTouches(intercept)
+    }
+    binding.controls.seekBar.interceptTouches = { intercept ->
+        rootBinding.container.interceptTouches(intercept)
+    }
+
     model.currentData.observe(requireActivity()) {
         loadData(it!!)
     }
@@ -201,7 +275,7 @@ fun MainFragment.setupCenter(
 
     binding.controls.b3.setOnClickListener {
         if (model.isPlaying.value!!) {
-            model.pause()
+            model.onPause()
         } else {
             model.play()
         }
@@ -216,10 +290,14 @@ fun MainFragment.setupCenter(
     }
 
     binding.btnLike.setOnClickListener {
+        "isEmpty: $isEmpty".e
+        if (isEmpty) rootBinding.container.goToRight() else
         model.favorite()
     }
 
     binding.btnShare.setOnClickListener {
+        "isEmpty: $isEmpty".e
+        if (isEmpty) rootBinding.container.goToRight() else
         model.share(requireContext().applicationContext, 0)
     }
 

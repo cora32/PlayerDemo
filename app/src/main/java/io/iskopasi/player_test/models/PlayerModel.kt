@@ -6,19 +6,24 @@ import android.graphics.Bitmap
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.iskopasi.player_test.MediaFile
 import io.iskopasi.player_test.R
 import io.iskopasi.player_test.Repo
 import io.iskopasi.player_test.room.MediaDao
+import io.iskopasi.player_test.room.MediaDataEntity
 import io.iskopasi.player_test.utils.FFTPlayer
 import io.iskopasi.player_test.utils.LoopIterator
 import io.iskopasi.player_test.utils.Utils.bg
+import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.utils.share
 import io.iskopasi.player_test.views.FFTChartData
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
 
@@ -43,6 +48,7 @@ data class MediaData(
         )
     }
 }
+
 data class MediaMetadata(
     var maxBitrate: Int = 0,
     var bitrate: Int = 0,
@@ -119,6 +125,10 @@ class PlayerModel @Inject constructor(
         setPlayStatus(isPlaying)
     }
 
+    private fun onPlaylistFinished() {
+//        pause()
+    }
+
     private fun onFullSpectrumReady(bitmap: Bitmap) {
         ui {
             spectrumChartData.value =
@@ -147,10 +157,6 @@ class PlayerModel @Inject constructor(
         }
     }
 
-    private fun onPlaylistFinished() {
-        pause()
-    }
-
     init {
         bg {
             val dataList = repo.read(getApplication()).toMediaData()
@@ -165,8 +171,17 @@ class PlayerModel @Inject constructor(
 
     private fun List<MediaFile>.toMediaData(): List<MediaData> {
         val favMap = dao
-            .getIsFavourite(this.map { it.id })
-            .associateBy { it.uid }
+            .getIsFavourite(map { it.id })
+            .associateBy { it.mediaId }
+
+        val all = dao.getAll()
+
+        all.forEach {
+            "--> allall: ${it.mediaId} ${it.isFavorite}".e
+        }
+        favMap.forEach {
+            "--> favMap: ${it.value.mediaId} ${it.value.isFavorite}".e
+        }
 
         return map { item ->
             MediaData(
@@ -223,6 +238,7 @@ class PlayerModel @Inject constructor(
     }
 
     private fun setPlayStatus(isPlayingValue: Boolean) {
+        "--> setPlayStatus: $isPlayingValue".e
         isPlaying.value = isPlayingValue
 
         if (isPlayingValue) {
@@ -240,20 +256,27 @@ class PlayerModel @Inject constructor(
             }
 
             startRequestingSeekerPositions()
+        } else {
+            if (player.isLastMedia()) {
+                player.setAutoPlay(false)
+                setSeekPosition(0L)
+            }
         }
     }
 
     fun play(auto: Boolean = false) {
-        if (player.isPlaying) {
-            pause()
-        }
-
+        player.setAutoPlay(true)
         player.play(auto)
     }
 
     fun pause() {
         isPlaying.value = false
         player.pause()
+    }
+
+    fun onPause() {
+        player.setAutoPlay(false)
+        pause()
     }
 
     fun shuffle() {
@@ -271,6 +294,19 @@ class PlayerModel @Inject constructor(
 
         currentData.value!!.isFavorite = newValue
         isFavorite.value = newValue
+
+        viewModelScope.launch(Dispatchers.IO) {
+            if (newValue) {
+                dao.insert(
+                    MediaDataEntity(
+                        mediaId = currentData.value!!.id,
+                        isFavorite = newValue
+                    )
+                )
+            } else {
+                dao.remove(currentData.value!!.id)
+            }
+        }
     }
 
     fun share(context: Context, index: Int) {
@@ -296,8 +332,8 @@ class PlayerModel @Inject constructor(
     }
 
     private fun updatePlaylist() {
-        playlist.value = player.getPlaylistIds().map {
-            iter.get(it)
+        playlist.value = player.getIdToPlaylistIndexMap().map {
+            iter.get(idToListIndexMap.getOrDefault(it.key, -1))
         }
     }
 
@@ -316,19 +352,30 @@ class PlayerModel @Inject constructor(
     fun addToPlaylist(index: Int, id: Int) {
         val item = iter.get(index)
         val path = item.path
+        val idToPlaylistIndexMap = player.getIdToPlaylistIndexMap()
 
-        val isAdded = allMediaActiveMapData.value?.getOrDefault(index, false)
+        // Add/Remove highlight from Media screen
+        val isActive = allMediaActiveMapData.value?.getOrDefault(index, false)
         allMediaActiveMapData.value = allMediaActiveMapData.value?.apply {
-
-            if (isAdded == true) {
-                player.remove(index)
+            if (isActive == true) {
+                "--> Deactivating $index in Media".e
                 remove(index)
                 idToListIndexMap.remove(id)
             } else {
-                player.add(path, index)
+                "--> Highlighting $index in Media".e
                 put(index, true)
                 idToListIndexMap[id] = index
             }
+        }
+
+        // Add/Remove from Playlist
+        val indexInPlaylist = idToPlaylistIndexMap.getOrDefault(id, -1)
+        if (indexInPlaylist != -1) {
+            "--> Removing $indexInPlaylist from playlist".e
+            player.remove(indexInPlaylist)
+        } else {
+            "--> Adding $path to playlist with ID: $id".e
+            player.add(path, id)
         }
 
         updatePlaylist()

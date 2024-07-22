@@ -23,7 +23,10 @@ class HiltModules {
     @Singleton
     fun getDB(
         @ApplicationContext context: Context
-    ): MediaDB = Room.databaseBuilder(context, MediaDB::class.java, "media_db").build()
+    ): MediaDB = Room
+        .databaseBuilder(context, MediaDB::class.java, "media_db")
+        .fallbackToDestructiveMigration()
+        .build()
 
 
     @Provides
