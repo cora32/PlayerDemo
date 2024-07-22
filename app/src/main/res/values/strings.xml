@@ -17,6 +17,12 @@
     <string name="empty_playlist">Playlist is empty</string>
     <string name="stats_list">Stats</string>
     <string name="freqs">Frequencies (Hz)</string>
+    <string name="bitrate">Bitrate</string>
+    <string name="max_bitrate">Max bitrate</string>
+    <string name="sample_rate">Sample Rate (Hz)</string>
+    <string name="channel_count">Channels</string>
+    <string name="mime">MIME</string>
+    <string name="encoding">Encoding</string>
     <string name="spectrogram">Spectrogram</string>
     <string name="play">Play</string>
     <string name="info">Info</string>

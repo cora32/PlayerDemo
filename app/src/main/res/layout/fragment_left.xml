@@ -66,11 +66,166 @@
     <io.iskopasi.player_test.views.SpectrumView
         android:id="@+id/spectro_view"
         android:layout_width="0dp"
-        android:layout_height="300dp"
+        android:layout_height="250dp"
         android:background="@color/trans"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_s" />
 
+    <TextView
+        android:id="@+id/tv_bitrate"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="start"
+        android:paddingVertical="4dp"
+        android:text="@string/bitrate"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spectro_view" />
+
+    <TextView
+        android:id="@+id/tv_bitrate_val"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="end"
+        android:paddingVertical="4dp"
+        android:text="-"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spectro_view" />
+
+    <TextView
+        android:id="@+id/tv_max_bitrate"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="start"
+        android:paddingVertical="4dp"
+        android:text="@string/max_bitrate"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_bitrate" />
+
+    <TextView
+        android:id="@+id/tv_max_bitrate_val"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="end"
+        android:paddingVertical="4dp"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        android:text="-"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_bitrate_val" />
+
+    <TextView
+        android:id="@+id/tv_sample_rate"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="start"
+        android:paddingVertical="4dp"
+        android:text="@string/sample_rate"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_max_bitrate" />
+
+    <TextView
+        android:id="@+id/tv_sample_rate_val"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="end"
+        android:paddingVertical="4dp"
+        android:textColor="@color/text_color_1"
+        android:text="-"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_max_bitrate_val" />
+
+    <TextView
+        android:id="@+id/tv_channels"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="start"
+        android:paddingVertical="4dp"
+        android:text="@string/channel_count"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_sample_rate" />
+
+    <TextView
+        android:id="@+id/tv_channels_val"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="end"
+        android:paddingVertical="4dp"
+        android:textColor="@color/text_color_1"
+        android:text="-"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_sample_rate_val" />
+
+    <TextView
+        android:id="@+id/tv_mime"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="start"
+        android:paddingVertical="4dp"
+        android:text="@string/mime"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_channels" />
+
+    <TextView
+        android:id="@+id/tv_mime_val"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="end"
+        android:paddingVertical="4dp"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        android:text="-"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_channels_val" />
+
+    <TextView
+        android:id="@+id/tv_encoding"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="start"
+        android:paddingVertical="4dp"
+        android:text="@string/encoding"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_mime" />
+
+    <TextView
+        android:id="@+id/tv_encoding_val"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/athiti_medium"
+        android:gravity="end"
+        android:paddingVertical="4dp"
+        android:textColor="@color/text_color_1"
+        android:textSize="12sp"
+        android:text="-"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_mime_val" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -385,3 +385,11 @@ void process(JNIEnv *env,
 //    LOGE("bitmap_width: %d x: %d", bitmap_width, *x);
     (*x)++;
 }
+
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_io_iskopasi_player_1test_utils_FFTPlayer_fft(JNIEnv *env, jobject thiz,
+                                                  jfloatArray src,
+                                                  jfloatArray dst) {
+    // may be later?..
+}

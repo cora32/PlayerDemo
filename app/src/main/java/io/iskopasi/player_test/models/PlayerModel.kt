@@ -15,7 +15,6 @@ import io.iskopasi.player_test.room.MediaDao
 import io.iskopasi.player_test.utils.FFTPlayer
 import io.iskopasi.player_test.utils.LoopIterator
 import io.iskopasi.player_test.utils.Utils.bg
-import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.utils.share
 import io.iskopasi.player_test.views.FFTChartData
@@ -44,6 +43,14 @@ data class MediaData(
         )
     }
 }
+data class MediaMetadata(
+    var maxBitrate: Int = 0,
+    var bitrate: Int = 0,
+    var sampleRateHz: Int = 0,
+    var channelCount: Int = 0,
+    var encoding: String = "-",
+    var mime: String = "-",
+)
 
 @UnstableApi
 @HiltViewModel
@@ -80,6 +87,7 @@ class PlayerModel @Inject constructor(
     var fftChartData = MutableLiveData(FFTChartData())
     var spectrumChartData = MutableLiveData(FFTChartData())
     var allMediaActiveMapData = MutableLiveData(mutableMapOf<Int, Boolean>())
+    var metadata = MutableLiveData(MediaMetadata())
     private val baseColor = ContextCompat.getColor(getApplication(), R.color.text_color_1_trans3)
     private val idToListIndexMap = mutableMapOf<Int, Int>()
 
@@ -91,7 +99,16 @@ class PlayerModel @Inject constructor(
             onPlaylistFinished = ::onPlaylistFinished,
             onMediaSet = ::onMediaSet,
             onPlayStatusChanged = ::onPlayStatusChanged,
+            onFlush = ::onFlush,
         )
+    }
+
+    private fun onFlush(sampleRateHz: Int, channelCount: Int, encoding: String) {
+        ui {
+            metadata.value = metadata.value?.apply {
+                this.encoding = encoding
+            }
+        }
     }
 
     private fun onMediaSet(index: Int) {
@@ -111,7 +128,7 @@ class PlayerModel @Inject constructor(
         }
     }
 
-    private fun requestCurrentPosition() = ui {
+    private fun startRequestingSeekerPositions() = ui {
         while (player.isPlaying) {
             currentProgress.value = player.getCurrentPosition()
             delay(500L)
@@ -171,13 +188,10 @@ class PlayerModel @Inject constructor(
 
         previousData = currentData.value
         currentData.value = data
-//        currentActiveIndex.value = iter.index
         currentActiveIndex.value = playlistIndex
 
         isFavorite.value = iter.value?.isFavorite
         currentProgress.value = 0
-
-//        player.set(currentData.value!!.path)
     }
 
     private fun resetUi() {
@@ -187,7 +201,7 @@ class PlayerModel @Inject constructor(
         currentProgress.value = 0
     }
 
-    fun setMedia(index: Int) {
+    private fun setMedia(index: Int) {
         if (playlist.value?.isEmpty() == true || playlist.value == null) {
             resetUi()
         } else {
@@ -212,8 +226,20 @@ class PlayerModel @Inject constructor(
         isPlaying.value = isPlayingValue
 
         if (isPlayingValue) {
-            player.prepareFifoBitmap(currentData.value!!.path, baseColor)
-            requestCurrentPosition()
+            val path = currentData.value!!.path
+
+            player.prepareFifoBitmap(path, baseColor)
+            val tempMetadata = player.extractMetadata(path)
+
+            metadata.value = metadata.value?.apply {
+                this.maxBitrate = tempMetadata.maxBitrate
+                this.bitrate = tempMetadata.bitrate
+                this.sampleRateHz = tempMetadata.sampleRateHz
+                this.channelCount = tempMetadata.channelCount
+                this.mime = tempMetadata.mime
+            }
+
+            startRequestingSeekerPositions()
         }
     }
 
@@ -261,7 +287,6 @@ class PlayerModel @Inject constructor(
         val listIndex = idToListIndexMap.getOrDefault(id, -1)
         if (listIndex >= 0) {
             allMediaActiveMapData.value = allMediaActiveMapData.value?.apply {
-                "--> Removing index: $index; indexInPlaylist: $index".e
                 player.remove(index)
                 remove(listIndex)
             }
@@ -294,15 +319,12 @@ class PlayerModel @Inject constructor(
 
         val isAdded = allMediaActiveMapData.value?.getOrDefault(index, false)
         allMediaActiveMapData.value = allMediaActiveMapData.value?.apply {
-            "--> index: $index; actualId: ${id} item: $path; isAdded: $isAdded".e
 
             if (isAdded == true) {
-                "--> Removing index: $index; indexInPlaylist: $index".e
                 player.remove(index)
                 remove(index)
                 idToListIndexMap.remove(id)
             } else {
-                "--> Adding index: $index".e
                 player.add(path, index)
                 put(index, true)
                 idToListIndexMap[id] = index

@@ -19,4 +19,12 @@ fun MainFragment.setupLeft(
     model.spectrumChartData.observe(requireActivity()) {
         binding.spectroView.set(it)
     }
+    model.metadata.observe(requireActivity()) {
+        binding.tvMimeVal.text = it.mime
+        binding.tvSampleRateVal.text = it.sampleRateHz.toString()
+        binding.tvBitrateVal.text = it.bitrate.toString()
+        binding.tvMaxBitrateVal.text = it.maxBitrate.toString()
+        binding.tvChannelsVal.text = it.channelCount.toString()
+        binding.tvEncodingVal.text = it.encoding
+    }
 }

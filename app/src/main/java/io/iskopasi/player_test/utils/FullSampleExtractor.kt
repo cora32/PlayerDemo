@@ -4,10 +4,16 @@ import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import android.media.MediaFormat.KEY_BIT_RATE
+import android.media.MediaFormat.KEY_CHANNEL_COUNT
+import android.media.MediaFormat.KEY_MIME
+import android.media.MediaFormat.KEY_SAMPLE_RATE
 import android.util.Log
 import androidx.core.graphics.ColorUtils
+import androidx.media3.common.util.MediaFormatUtil.KEY_MAX_BIT_RATE
 import androidx.media3.common.util.UnstableApi
 import com.paramsen.noise.Noise
+import io.iskopasi.player_test.models.MediaMetadata
 import io.iskopasi.player_test.utils.FFTPlayer.Companion.SAMPLE_SIZE
 import io.iskopasi.player_test.utils.Utils.e
 import java.io.IOException
@@ -32,7 +38,7 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap) -> Unit) {
     private var mFormat: MediaFormat? = null
     private var sampleSize: Int = 0
     private var maxAmplitude = 0f
-    private val noise = Noise.real(SAMPLE_SIZE)
+//    private val noise = Noise.real(SAMPLE_SIZE)
 
     fun extract(path: String, baseColor: Int) {
         "--> mFormat: ${mFormat.toString()}".e
@@ -242,7 +248,7 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap) -> Unit) {
             src[i] = short.toFloat()
         }
 
-        val fft: FloatArray = noise.fft(src, dst)
+        val fft: FloatArray = Noise.real(SAMPLE_SIZE).fft(src, dst)
 
         val chartData = mutableListOf<Float>()
         for (i in 0 until fft.size / 2) {
@@ -316,4 +322,38 @@ class FullSampleExtractor(private val onFullSpectrumReady: (Bitmap) -> Unit) {
 
         return bitmap
     }
+
+    fun extractMetadata(path: String): MediaMetadata {
+
+        val extractor = MediaExtractor().apply { setDataSource(path) }
+        val format = extractor.getTrackFormat(0)
+        val maxBitrate = format.getIntegerSafe(KEY_MAX_BIT_RATE)
+        val bitrate = format.getIntegerSafe(KEY_BIT_RATE)
+        val sampleRate = format.getIntegerSafe(KEY_SAMPLE_RATE)
+        val channelCount = format.getIntegerSafe(KEY_CHANNEL_COUNT)
+        val mime = format.getStringSafe(KEY_MIME)
+
+        return MediaMetadata(
+            maxBitrate = maxBitrate,
+            bitrate = bitrate,
+            sampleRateHz = sampleRate,
+            channelCount = channelCount,
+            mime = mime
+        )
+    }
 }
+
+private fun MediaFormat.getIntegerSafe(key: String): Int =
+    try {
+        getInteger(key)
+    } catch (ex: Exception) {
+        -1
+    }
+
+private fun MediaFormat.getStringSafe(key: String): String =
+    try {
+        getString(key) ?: "-"
+    } catch (ex: Exception) {
+        "-"
+    }
+

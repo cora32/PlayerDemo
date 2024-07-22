@@ -2,6 +2,7 @@ package io.iskopasi.player_test.utils
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.media.AudioFormat
 import android.os.Handler
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -18,6 +19,7 @@ import androidx.media3.exoplayer.audio.TeeAudioProcessor
 import androidx.media3.exoplayer.audio.TeeAudioProcessor.AudioBufferSink
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import com.paramsen.noise.Noise
+import io.iskopasi.player_test.models.MediaMetadata
 import io.iskopasi.player_test.utils.Utils.bg
 import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.views.FFTView.Companion.FREQUENCY_BAND_LIMITS
@@ -42,7 +44,8 @@ class FFTPlayer(
     ) -> Unit,
     onPlayStatusChanged: (Boolean) -> Unit,
     onPlaylistFinished: () -> Unit,
-    onMediaSet: (Int) -> Unit
+    onMediaSet: (Int) -> Unit,
+    onFlush: (Int, Int, String) -> Unit,
 ) {
     private var fifoBitmap: FifoBitmap? = null
 
@@ -106,9 +109,9 @@ class FFTPlayer(
     val isPlaying: Boolean
         get() = player.isPlaying
 
-    //    private val extractor by lazy {
-//        FullSampleExtractor(onFullSpectrumReady)
-//    }
+    private val extractor by lazy {
+        FullSampleExtractor(onFullSpectrumReady)
+    }
     private val bufferSink by lazy {
         object : AudioBufferSink {
             private var sampleRateHz = 0
@@ -127,7 +130,42 @@ class FFTPlayer(
                 this.channelCount = channelCount
                 this.encoding = encoding
 
-                "--> FFT flush $sampleRateHz $channelCount $encoding".e
+                val encodingString = when (encoding) {
+                    AudioFormat.ENCODING_INVALID -> "ENCODING_INVALID"
+                    AudioFormat.ENCODING_PCM_16BIT -> "ENCODING_PCM_16BIT"
+                    AudioFormat.ENCODING_PCM_8BIT -> "ENCODING_PCM_8BIT"
+                    AudioFormat.ENCODING_PCM_FLOAT -> "ENCODING_PCM_FLOAT"
+                    AudioFormat.ENCODING_AC3 -> "ENCODING_AC3"
+                    AudioFormat.ENCODING_E_AC3 -> "ENCODING_E_AC3"
+                    AudioFormat.ENCODING_DTS -> "ENCODING_DTS"
+                    AudioFormat.ENCODING_DTS_HD -> "ENCODING_DTS_HD"
+                    AudioFormat.ENCODING_MP3 -> "ENCODING_MP3"
+                    AudioFormat.ENCODING_AAC_LC -> "ENCODING_AAC_LC"
+                    AudioFormat.ENCODING_AAC_HE_V1 -> "ENCODING_AAC_HE_V1"
+                    AudioFormat.ENCODING_AAC_HE_V2 -> "ENCODING_AAC_HE_V2"
+                    AudioFormat.ENCODING_IEC61937 -> "ENCODING_IEC61937"
+                    AudioFormat.ENCODING_DOLBY_TRUEHD -> "ENCODING_DOLBY_TRUEHD"
+                    AudioFormat.ENCODING_AAC_ELD -> "ENCODING_AAC_ELD"
+                    AudioFormat.ENCODING_AAC_XHE -> "ENCODING_AAC_XHE"
+                    AudioFormat.ENCODING_AC4 -> "ENCODING_AC4"
+                    AudioFormat.ENCODING_E_AC3_JOC -> "ENCODING_E_AC3_JOC"
+                    AudioFormat.ENCODING_DOLBY_MAT -> "ENCODING_DOLBY_MAT"
+                    AudioFormat.ENCODING_OPUS -> "ENCODING_OPUS"
+                    AudioFormat.ENCODING_PCM_24BIT_PACKED -> "ENCODING_PCM_24BIT_PACKED"
+                    AudioFormat.ENCODING_PCM_32BIT -> "ENCODING_PCM_32BIT"
+                    AudioFormat.ENCODING_MPEGH_BL_L3 -> "ENCODING_MPEGH_BL_L3"
+                    AudioFormat.ENCODING_MPEGH_BL_L4 -> "ENCODING_MPEGH_BL_L4"
+                    AudioFormat.ENCODING_MPEGH_LC_L3 -> "ENCODING_MPEGH_LC_L3"
+                    AudioFormat.ENCODING_MPEGH_LC_L4 -> "ENCODING_MPEGH_LC_L4"
+                    AudioFormat.ENCODING_DTS_UHD_P1 -> "ENCODING_DTS_UHD_P1"
+                    AudioFormat.ENCODING_DRA -> "ENCODING_DRA"
+                    AudioFormat.ENCODING_DTS_HD_MA -> "ENCODING_DTS_HD_MA"
+                    AudioFormat.ENCODING_DTS_UHD_P2 -> "ENCODING_DTS_UHD_P2"
+                    AudioFormat.ENCODING_DSD -> "ENCODING_DSD"
+                    else -> "invalid encoding $encoding"
+                }
+
+                onFlush(sampleRateHz, channelCount, encodingString)
             }
 
             override fun handleBuffer(buffer: ByteBuffer) {
@@ -288,7 +326,13 @@ class FFTPlayer(
 
     init {
         player.prepare()
+//        System.loadLibrary("player_test")
     }
+
+//    private external fun fft(
+//        src: FloatArray,
+//        dst: FloatArray,
+//    ): Bitmap
 
     fun prepare() {
         player.prepare()
@@ -371,7 +415,6 @@ class FFTPlayer(
 
         val width = File(path).length() / SAMPLE_SIZE
         val height = SAMPLE_SIZE / 4
-//        val bufferSize = File(path).length()
         val bufferSize = width.toInt() * height * 2
 
         fifoBitmap = FifoBitmap(
@@ -383,6 +426,7 @@ class FFTPlayer(
     }
 
     fun getCurrentPosition() = player.currentPosition
+
     fun clearPlaylist() {
         player.clearMediaItems()
     }
@@ -390,4 +434,6 @@ class FFTPlayer(
     fun setAutoPlay(auto: Boolean) {
         player.playWhenReady = auto
     }
+
+    fun extractMetadata(path: String): MediaMetadata = extractor.extractMetadata(path)
 }

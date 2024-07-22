@@ -2,7 +2,6 @@ package io.iskopasi.player_test.utils
 
 import android.graphics.Bitmap
 import androidx.media3.common.util.UnstableApi
-import io.iskopasi.player_test.utils.FFTPlayer.Companion.SAMPLE_SIZE
 
 
 class FifoBitmap(
@@ -22,10 +21,9 @@ class FifoBitmap(
         onFullSpectrumReady: (Bitmap) -> Unit
     ) {
         val valueFactor: Float = 255 / maxRawAmplitude
-        val bitmapHeight = SAMPLE_SIZE / 4
 
-        for (y in 0 until bitmapHeight) {
-            val alpha: Int = (data[y + bitmapHeight] * valueFactor).toInt()
+        for (y in 0 until height) {
+            val alpha: Int = (data[y + height] * valueFactor).toInt()
             val currentPixel: Int = (baseColor and 0x00ffffff) or (alpha shl 24)
             val position = x + (y * width)
 
