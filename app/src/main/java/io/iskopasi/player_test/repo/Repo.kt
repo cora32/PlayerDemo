@@ -32,9 +32,9 @@ class Repo @Inject constructor() {
             arrayOf(
                 MediaStore.Audio.Albums._ID,
                 MediaStore.Audio.Media.DATA,
-                MediaStore.Audio.AudioColumns.DISPLAY_NAME,
-                MediaStore.Audio.AudioColumns.ALBUM,
-                MediaStore.Audio.ArtistColumns.ARTIST,
+                MediaStore.Audio.Media.DISPLAY_NAME,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.ARTIST,
                 MediaStore.Audio.Media.DURATION,
             ), null, null, null
         )?.use {
@@ -49,8 +49,10 @@ class Repo @Inject constructor() {
 
                 val mFile = MediaFile(id++, albumId, path, name, album, artist, duration)
 
-//                val text = "data"
-//                if (path.contains(text) || name.contains(text) || album.contains(text)) {
+                val text = "data"
+                val text2 = "Beach"
+//                if (path.contains(text) || name.contains(text) || album.contains(text)
+//                    || path.contains(text2) || name.contains(text2) || album.contains(text2)) {
                 files.add(mFile)
 //                    "->> file: $mFile".e
 //                }

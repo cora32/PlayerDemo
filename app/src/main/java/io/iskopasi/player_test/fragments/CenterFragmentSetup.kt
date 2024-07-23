@@ -24,6 +24,7 @@ import io.iskopasi.player_test.utils.getAccent
 import io.iskopasi.player_test.utils.toBitmap
 import jp.wasabeef.glide.transformations.BlurTransformation
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -212,6 +213,11 @@ fun MainFragment.setupCenter(
 
     model.currentData.observe(requireActivity()) {
         loadData(it!!)
+
+        lifecycleScope.launch {
+            delay(timeMillis = 200)
+            rootBinding.container.hideLoader()
+        }
     }
 
     model.currentProgress.observe(requireActivity()) {

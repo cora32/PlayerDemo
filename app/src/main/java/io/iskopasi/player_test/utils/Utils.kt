@@ -20,7 +20,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.palette.graphics.Palette
 import io.iskopasi.player_test.BuildConfig
-import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.toBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -103,8 +102,6 @@ object Utils {
 data class ColorsData(val vibrant: Int, val darkVibrant: Int)
 
 fun getImageBitmap(path: String): Bitmap? = MediaMetadataRetriever().run {
-    "---> bitmappath: $path".e
-
     if (path.isEmpty()) return null
 
     setDataSource(path)

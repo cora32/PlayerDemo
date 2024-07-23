@@ -13,7 +13,8 @@
     <color name="trans_red">#61FF0000</color>
     <color name="bg1">#714423</color>
     <color name="bg2">#CDEDEDED</color>
-    <color name="bg3">#CD292929</color>
+    <color name="bg3">#E2292929</color>
+    <color name="splash_bg">#FF292929</color>
     <color name="yellow">#FFCF29</color>
     <color name="silver">#D4D4D4</color>
     <color name="gradient_start">#83B1B1B1</color>

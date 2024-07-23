@@ -92,6 +92,7 @@ class FFTView @JvmOverloads constructor(
     private val xPadding = context.toPx(25)
     private val yPadding = context.toPx(40)
     private val bgRect = Rect(0, 0, 0, 0)
+    private val textOffset = context.toPx(4)
 
     var data = FFTChartData()
         set(value) {
@@ -171,7 +172,7 @@ class FFTView @JvmOverloads constructor(
                 val textY = tY + lOffset * 5f
 
                 canvas.rotate(45f, xValue, textY)
-                canvas.drawText(text, xValue, textY, paint)
+                canvas.drawText(text, xValue - textOffset, textY + textOffset, paint)
                 canvas.rotate(-45f, xValue, textY)
                 canvas.drawLine(xValue, tY - lOffset, xValue, tY + lOffset, paint)
             }

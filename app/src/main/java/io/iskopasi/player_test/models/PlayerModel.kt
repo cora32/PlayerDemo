@@ -258,8 +258,9 @@ class PlayerModel @Inject constructor(
             startRequestingSeekerPositions()
         } else {
             if (player.isLastMedia()) {
-                player.setAutoPlay(false)
-                setSeekPosition(0L)
+//                player.setAutoPlay(false)
+//                setSeekPosition(0L)
+                currentProgress.value = 0
             }
         }
     }

@@ -1,6 +1,7 @@
 package io.iskopasi.player_test.views
 
 import android.animation.Animator
+import android.animation.Animator.AnimatorListener
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.content.Context
@@ -18,6 +19,7 @@ import android.widget.FrameLayout
 import androidx.core.content.ContextCompat
 import androidx.viewbinding.ViewBinding
 import androidx.window.layout.WindowMetricsCalculator
+import io.iskopasi.player_test.databinding.LoaderBinding
 import io.iskopasi.player_test.databinding.MenuLayoutBinding
 import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
@@ -98,6 +100,7 @@ class SlidingContainer @JvmOverloads constructor(
     private var animationY: ValueAnimator = ValueAnimator.ofFloat()
     private val topArrowOffset by lazy { context.toPx(20) }
     private val bottomArrowOffset by lazy { context.toPx(20) }
+    private var loaderBinding: LoaderBinding? = null
     private val animationEndListener = object : Animator.AnimatorListener {
         override fun onAnimationStart(animation: Animator) {
         }
@@ -245,13 +248,21 @@ class SlidingContainer @JvmOverloads constructor(
         }
     }
 
-    fun initialize(screens: List<SlidingScreen<ViewBinding>>) {
+    fun initialize(
+        loaderBinding: LoaderBinding? = null,
+        screens: List<SlidingScreen<ViewBinding>>,
+    ) {
+        showLoader(loaderBinding)
+
         isInitialized = false
         val inflater = LayoutInflater.from(context)
 
         for (screen in screens) {
             val binding = screen.bindingInflater(inflater, this, true)
             val view = binding.root
+
+            // Hiding screen until their parameters are set
+            view.visibility = View.INVISIBLE
 
             viewMap[screen.position.name] = view
             bindingMap[binding::class] = binding
@@ -314,7 +325,43 @@ class SlidingContainer @JvmOverloads constructor(
         // Adding menu layout
         addView(menuBinding.root)
 
+        // Showing screens' contents
+        for (view in viewMap.values) {
+            view.post {
+                view.visibility = View.VISIBLE
+            }
+        }
+
         isInitialized = true
+    }
+
+    fun hideLoader() {
+        loaderBinding?.let {
+            it.root.animate().alpha(0f).setDuration(400L)
+                .setListener(object : AnimatorListener {
+                    override fun onAnimationStart(animation: Animator) {
+                    }
+
+                    override fun onAnimationEnd(animation: Animator) {
+                        it.root.visibility = View.GONE
+                    }
+
+                    override fun onAnimationCancel(animation: Animator) {
+                    }
+
+                    override fun onAnimationRepeat(animation: Animator) {
+                    }
+
+                })
+                .start()
+        }
+    }
+
+    private fun showLoader(loaderBinding: LoaderBinding?) {
+        if (loaderBinding == null) return
+
+        this.loaderBinding = loaderBinding
+        addView(loaderBinding.root)
     }
 
     private fun resetIndexes() {
@@ -400,6 +447,8 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (!isInitialized) return true
+
         if (!isIntercepting) processTouchEvent(event)
 
         return super.dispatchTouchEvent(event)

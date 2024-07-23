@@ -1,0 +1,44 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="200dp"
+            android:height="200dp"
+            android:viewportWidth="200"
+            android:viewportHeight="200">
+
+            <group android:name="r1">
+                <path
+                    android:fillColor="#2196F3"
+                    android:pathData="M40,65m-15,0a15,15 0,1 1,30 0a15,15 0,1 1,-30 0"
+                    android:strokeWidth="5"
+                    android:strokeColor="#2196F3" />
+            </group>
+
+            <group android:name="r2">
+                <path
+                    android:fillColor="#FF156D"
+                    android:pathData="M100,65m-15,0a15,15 0,1 1,30 0a15,15 0,1 1,-30 0"
+                    android:strokeWidth="5"
+                    android:strokeColor="#FF156D" />
+            </group>
+
+            <group android:name="r3">
+                <path
+                    android:fillColor="#44C50E"
+                    android:pathData="M160,65m-15,0a15,15 0,1 1,30 0a15,15 0,1 1,-30 0"
+                    android:strokeWidth="5"
+                    android:strokeColor="#44C50E" />
+            </group>
+        </vector>
+    </aapt:attr>
+    <target
+        android:name="r1"
+        android:animation="@animator/anim1"></target>
+    <target
+        android:name="r2"
+        android:animation="@animator/anim2"></target>
+    <target
+        android:name="r3"
+        android:animation="@animator/anim3"></target>
+</animated-vector>

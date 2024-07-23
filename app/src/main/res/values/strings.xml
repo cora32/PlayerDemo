@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">player_test</string>
+    <string name="app_name">PlayerDemo</string>
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
     <string name="select_fragment_label">Selector Fragment</string>
