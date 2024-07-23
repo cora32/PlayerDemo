@@ -7,6 +7,7 @@ import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import io.iskopasi.player_test.utils.Utils.ui
 import kotlinx.coroutines.delay
+import kotlin.math.abs
 
 class TransparentRecyclerView @JvmOverloads constructor(
     context: Context,
@@ -15,6 +16,7 @@ class TransparentRecyclerView @JvmOverloads constructor(
 ) : RecyclerView(context, attrs, defStyleAttr) {
     private val container: SlidingContainer
         get() = (parent?.parent as SlidingContainer)
+    private var scrollDeltaY = 0
     private var scrollDirection = 0
     private var keepScrolling = false
 
@@ -37,9 +39,10 @@ class TransparentRecyclerView @JvmOverloads constructor(
             MotionEvent.ACTION_UP -> {
                 keepScrolling = false
 
-                fling(0, scrollDirection * 5000)
+                if (abs(scrollDeltaY) > 10) fling(0, scrollDirection * 5000)
             }
         }
+
         super.dispatchTouchEvent(event)
 
         return true
@@ -48,7 +51,9 @@ class TransparentRecyclerView @JvmOverloads constructor(
     override fun onScrollChanged(l: Int, t: Int, oldl: Int, oldt: Int) {
         super.onScrollChanged(l, t, oldl, oldt)
 
-        scrollDirection = if (t > oldt) 1 else -1
+        scrollDeltaY = t - oldt
+
+        scrollDirection = if (scrollDeltaY > 0) 1 else -1
     }
 
     private fun startScrolling() {
