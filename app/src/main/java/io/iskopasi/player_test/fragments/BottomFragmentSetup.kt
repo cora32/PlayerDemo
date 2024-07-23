@@ -70,4 +70,8 @@ fun MainFragment.setupBottom(
     model.currentActiveIndex.observe(requireActivity()) {
         adapter.active = it
     }
+
+    model.currentActiveState.observe(requireActivity()) {
+        adapter.state = it
+    }
 }

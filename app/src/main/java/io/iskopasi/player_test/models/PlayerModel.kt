@@ -12,6 +12,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.iskopasi.player_test.MediaFile
 import io.iskopasi.player_test.R
 import io.iskopasi.player_test.Repo
+import io.iskopasi.player_test.adapters.ItemState
 import io.iskopasi.player_test.room.MediaDao
 import io.iskopasi.player_test.room.MediaDataEntity
 import io.iskopasi.player_test.utils.FFTPlayer
@@ -88,6 +89,8 @@ class PlayerModel @Inject constructor(
     var isRepeating = MutableLiveData(false)
     var isFavorite = MutableLiveData(false)
     var currentActiveIndex = MutableLiveData(-1)
+    var currentActiveMediaIndex = MutableLiveData(-1)
+    var currentActiveState = MutableLiveData(ItemState.NONE)
     var currentProgress = MutableLiveData(0L)
     var mediaList = MutableLiveData(listOf<MediaData>())
     var fftChartData = MutableLiveData(FFTChartData())
@@ -205,6 +208,9 @@ class PlayerModel @Inject constructor(
         currentData.value = data
         currentActiveIndex.value = playlistIndex
 
+        "--> currentActiveMediaIndex: ${data.path} ${data.id} ${idToListIndexMap.keys}".e
+        currentActiveMediaIndex.value = idToListIndexMap[currentData.value!!.id]
+
         isFavorite.value = iter.value?.isFavorite
         currentProgress.value = 0
     }
@@ -233,6 +239,7 @@ class PlayerModel @Inject constructor(
     }
 
     fun setSeekPosition(progress: Long) {
+        "Setting progress to: $progress".e
         currentProgress.value = progress
         player.seekTo(progress)
     }
@@ -242,6 +249,7 @@ class PlayerModel @Inject constructor(
         isPlaying.value = isPlayingValue
 
         if (isPlayingValue) {
+            currentActiveState.value = ItemState.PLAYING
             val path = currentData.value!!.path
 
             player.prepareFifoBitmap(path, baseColor)
@@ -257,11 +265,12 @@ class PlayerModel @Inject constructor(
 
             startRequestingSeekerPositions()
         } else {
-            if (player.isLastMedia()) {
-//                player.setAutoPlay(false)
-//                setSeekPosition(0L)
-                currentProgress.value = 0
-            }
+            currentActiveState.value = ItemState.PAUSE
+//            if (player.isLastMedia()) {
+////                player.setAutoPlay(false)
+////                setSeekPosition(0L)
+////                currentProgress.value = 0
+//            }
         }
     }
 
@@ -344,6 +353,7 @@ class PlayerModel @Inject constructor(
         idToListIndexMap.clear()
 
         player.setAutoPlay(true)
+        "Playing single media at $index (playlist): id = $id".e
         addToPlaylist(index, id)
     }
 
@@ -363,7 +373,7 @@ class PlayerModel @Inject constructor(
                 remove(index)
                 idToListIndexMap.remove(id)
             } else {
-                "--> Highlighting $index in Media".e
+                "--> Highlighting $index in Media; id = $id".e
                 put(index, true)
                 idToListIndexMap[id] = index
             }

@@ -22,7 +22,7 @@ fun MainFragment.setupRight(
         rootBinding.container.hideMenu()
     }
 
-    fun setMenuActions(index: Int) {
+    fun setMenuActions(index: Int, id: Int) {
         rootBinding.container.menuOnPlay = {
             model.setAsPlaylist(index, id)
         }
@@ -39,7 +39,7 @@ fun MainFragment.setupRight(
 
     fun onLongPress(event: MotionEvent, index: Int, id: Int) {
         rootBinding.container.removeMenuActions()
-        setMenuActions(index)
+        setMenuActions(index, id)
         rootBinding.container.showMenu(event, index)
     }
 
@@ -75,5 +75,12 @@ fun MainFragment.setupRight(
         for (index in removedIndexes) {
             adapter.removeActive(index)
         }
+    }
+    model.currentActiveMediaIndex.observe(requireActivity()) {
+        adapter.active = it
+    }
+
+    model.currentActiveState.observe(requireActivity()) {
+        adapter.state = it
     }
 }

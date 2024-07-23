@@ -35,17 +35,12 @@ import kotlin.math.sqrt
 @UnstableApi
 class FFTPlayer(
     context: Context,
-    onHandleBuffer: (
-        MutableMap<Int, Float>,
-        Float
-    ) -> Unit,
-    onFullSpectrumReady: (
-        Bitmap,
-    ) -> Unit,
+    onHandleBuffer: (MutableMap<Int, Float>, Float) -> Unit,
+    onFullSpectrumReady: (Bitmap) -> Unit,
     onPlayStatusChanged: (Boolean) -> Unit,
     onPlaylistFinished: () -> Unit,
     onMediaSet: (Int) -> Unit,
-    onFlush: (Int, Int, String) -> Unit,
+    onFlush: (Int, Int, String) -> Unit
 ) {
     private var fifoBitmap: FifoBitmap? = null
     private var allowPlayingStateChange = true
@@ -69,16 +64,27 @@ class FFTPlayer(
                 }
             }
 
-//            override fun onPlaybackStateChanged(playbackState: Int) {
-//                super.onPlaybackStateChanged(playbackState)
-//
-//                when (playbackState) {
-//                    Player.STATE_IDLE -> {}
-//                    Player.STATE_BUFFERING -> {}
-//                    Player.STATE_READY -> {}
-//                    Player.STATE_ENDED -> {}
-//                }
-//            }
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+
+                when (playbackState) {
+                    Player.STATE_IDLE -> {
+                        "FFTPlayer: STATE_IDLE".e
+                    }
+
+                    Player.STATE_BUFFERING -> {
+                        "FFTPlayer: STATE_BUFFERING".e
+                    }
+
+                    Player.STATE_READY -> {
+                        "FFTPlayer: STATE_READY".e
+                    }
+
+                    Player.STATE_ENDED -> {
+                        "FFTPlayer: STATE_ENDED".e
+                    }
+                }
+            }
 
             override fun onEvents(player: Player, events: Player.Events) {
                 super.onEvents(player, events)
@@ -103,6 +109,7 @@ class FFTPlayer(
             .setRenderersFactory(rendererFactory)
             .build().apply {
                 addListener(listener)
+                pauseAtEndOfMediaItems = true
             }
     }
 
