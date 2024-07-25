@@ -19,6 +19,18 @@
         <action
             android:id="@+id/to_perm_denied"
             app:destination="@id/permission_denied" />
+
+        <action
+            android:id="@+id/to_info"
+            app:destination="@id/info_screen" />
     </fragment>
+
+    <activity
+        android:id="@+id/info_screen"
+        android:name="io.iskopasi.player_test.activities.InfoActivity">
+        <!--        <action-->
+        <!--            android:id="@+id/to_perm_denied"-->
+        <!--            app:destination="@id/permission_denied" />-->
+    </activity>
 
 </navigation>

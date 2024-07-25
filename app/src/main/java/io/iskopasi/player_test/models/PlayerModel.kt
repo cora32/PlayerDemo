@@ -82,7 +82,7 @@ class PlayerModel @Inject constructor(
     )
     private lateinit var iter: LoopIterator<MediaData>
     private var previousData: MediaData? = null
-    var currentData: MutableLiveData<MediaData> = MutableLiveData(MediaData.empty)
+    val currentData by lazy { MutableLiveData(repo.currentData) }
     var playlist = MutableLiveData(listOf<MediaData>())
     var isPlaying = MutableLiveData(false)
     var isShuffling = MutableLiveData(false)
@@ -161,6 +161,7 @@ class PlayerModel @Inject constructor(
     }
 
     init {
+        "--> INITING VIEWMODEL".e
         bg {
             val dataList = repo.read(getApplication()).toMediaData()
                 .sortedBy { it.subtitle }

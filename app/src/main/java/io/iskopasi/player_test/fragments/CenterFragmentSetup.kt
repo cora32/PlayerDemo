@@ -9,6 +9,7 @@ import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
+import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
@@ -107,7 +108,7 @@ fun MainFragment.setupCenter(
         }
     }
 
-    fun setImageResource(data: MediaData) {
+    fun setMediaImage(data: MediaData) {
         Glide
             .with(requireContext().applicationContext)
             .load(data.imageId)
@@ -165,7 +166,7 @@ fun MainFragment.setupCenter(
 
             // Has to be run on UI
             lifecycleScope.launch {
-                if (bitmap != null) setBitmap(bitmap) else setImageResource(data)
+                if (bitmap != null) setBitmap(bitmap) else setMediaImage(data)
             }
         }
 
@@ -204,6 +205,10 @@ fun MainFragment.setupCenter(
 //                null
 //            )
 //        )
+    binding.image.setOnClickListener {
+        findNavController().navigate(R.id.to_info)
+    }
+
     binding.volumeView.interceptTouches = { intercept ->
         rootBinding.container.interceptTouches(intercept)
     }

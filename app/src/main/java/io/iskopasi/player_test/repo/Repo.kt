@@ -2,6 +2,7 @@ package io.iskopasi.player_test
 
 import android.content.Context
 import android.provider.MediaStore
+import io.iskopasi.player_test.models.MediaData
 import io.iskopasi.player_test.utils.Utils.e
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -22,6 +23,8 @@ data class MediaFile(
 
 @Singleton
 class Repo @Inject constructor() {
+    val currentData = MediaData.empty
+
     fun read(context: Context): List<MediaFile> {
         "--> Reading... ${Thread.currentThread().name}".e
 
@@ -49,7 +52,7 @@ class Repo @Inject constructor() {
 
                 val mFile = MediaFile(id++, albumId, path, name, album, artist, duration)
 
-                val text = "data"
+                val text = "hui"
                 val text2 = "Beach"
                 if (path.contains(text) || name.contains(text) || album.contains(text)
                     || path.contains(text2) || name.contains(text2) || album.contains(text2)

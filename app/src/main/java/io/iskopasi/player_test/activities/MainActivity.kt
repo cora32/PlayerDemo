@@ -1,4 +1,4 @@
-package io.iskopasi.player_test
+package io.iskopasi.player_test.activities
 
 import android.os.Bundle
 import android.view.WindowManager

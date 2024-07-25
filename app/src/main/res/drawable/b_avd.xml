@@ -34,11 +34,11 @@
     </aapt:attr>
     <target
         android:name="r1"
-        android:animation="@animator/anim1"></target>
+        android:animation="@animator/anim1" />
     <target
         android:name="r2"
-        android:animation="@animator/anim2"></target>
+        android:animation="@animator/anim2" />
     <target
         android:name="r3"
-        android:animation="@animator/anim3"></target>
+        android:animation="@animator/anim3" />
 </animated-vector>

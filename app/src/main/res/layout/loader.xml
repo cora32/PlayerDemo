@@ -9,7 +9,7 @@
 
     <ImageView
         android:id="@+id/loader_iv"
-        android:layout_width="45dp"
+        android:layout_width="75dp"
         android:layout_height="45dp"
         android:scaleType="centerInside"
         android:src="@drawable/b_avd"
