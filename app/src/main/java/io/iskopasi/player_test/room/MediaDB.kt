@@ -5,14 +5,15 @@ import androidx.room.RoomDatabase
 
 
 @Database(
-    entities = [MediaDataEntity::class],
-    version = 2,
+    entities = [MediaDataEntity::class, CachedTextEntity::class],
+    version = 3,
 //    autoMigrations = [
 //        MIGRATION_1_2
 //    ]
 )
 abstract class MediaDB : RoomDatabase() {
     abstract fun dao(): MediaDao
+    abstract fun cachedTextDao(): CachedTextDao
 
 //    @Add(fromColumnName = "User", toColumnName = "AppUser")
 //    class MyAutoMigration : AutoMigrationSpec

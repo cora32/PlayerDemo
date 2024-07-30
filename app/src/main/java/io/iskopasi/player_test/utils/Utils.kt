@@ -22,7 +22,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.palette.graphics.Palette
 import io.iskopasi.player_test.BuildConfig
-import io.iskopasi.player_test.utils.Utils.toBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,6 +31,7 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
+import java.io.InputStream
 import kotlin.math.PI
 
 
@@ -66,8 +66,6 @@ object Utils {
         get() {
             Log.e("--> ERR:", this)
         }
-
-    fun ByteArray.toBitmap(): Bitmap = BitmapFactory.decodeByteArray(this, 0, this.size)
 
 
     fun ViewModel.ui(block: suspend (CoroutineScope) -> Unit): Job = viewModelScope.launch(
@@ -123,8 +121,13 @@ fun getImageBitmap(path: String): Bitmap? = MediaMetadataRetriever().run {
 
     setDataSource(path)
 
-    embeddedPicture?.toBitmap()
+//    embeddedPicture?.toBitmap()
+    embeddedPicture?.inputStream()?.toBitmap()
 }
+
+fun ByteArray.toBitmap(): Bitmap? = BitmapFactory.decodeByteArray(this, 0, this.size)
+
+fun InputStream.toBitmap(): Bitmap = use { BitmapFactory.decodeStream(it) }
 
 val String.toBitmap: Bitmap?
     get() {

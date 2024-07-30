@@ -50,6 +50,7 @@ class InfoViewModel @Inject constructor(
                     if (lyricsText == null) {
                         error.value = noLyrics
                     } else {
+                        repo.cacheText(name, lyricsText)
                         lyrics.value = lyricsText
                         error.value = ""
                     }

@@ -83,16 +83,12 @@ class PlayerModel @Inject constructor(
 ) : AndroidViewModel(context) {
     private val images = listOf(
         R.drawable.none,
-        R.drawable.wat,
-        R.drawable.billy,
         R.drawable.i2,
         R.drawable.i3,
         R.drawable.i4,
         R.drawable.i5,
         R.drawable.i6,
         R.drawable.i7,
-        R.drawable.i8,
-        R.drawable.i9,
         R.drawable.i10,
     )
     private lateinit var iter: LoopIterator<MediaData>

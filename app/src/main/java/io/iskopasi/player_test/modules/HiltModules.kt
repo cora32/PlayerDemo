@@ -14,6 +14,7 @@ import io.iskopasi.player_test.Repo
 import io.iskopasi.player_test.converter.JsoupConverterFactory
 import io.iskopasi.player_test.repo.HtmlApi
 import io.iskopasi.player_test.repo.JsonApi
+import io.iskopasi.player_test.room.CachedTextDao
 import io.iskopasi.player_test.room.MediaDB
 import io.iskopasi.player_test.room.MediaDao
 import io.iskopasi.player_test.utils.getClient
@@ -27,7 +28,8 @@ import javax.inject.Singleton
 class HiltModules {
     @Provides
     @Singleton
-    fun getRepo(): Repo = Repo(getApiJson())
+    fun getRepo(@ApplicationContext context: Context): Repo =
+        Repo(getApiJson(), getCacheDao(getDB(context)))
 
     @Provides
     @Singleton
@@ -42,6 +44,10 @@ class HiltModules {
     @Provides
     @Singleton
     fun getDao(db: MediaDB): MediaDao = db.dao()
+
+    @Provides
+    @Singleton
+    fun getCacheDao(db: MediaDB): CachedTextDao = db.cachedTextDao()
 
     private var gson: Gson = GsonBuilder()
         .setStrictness(Strictness.LENIENT)

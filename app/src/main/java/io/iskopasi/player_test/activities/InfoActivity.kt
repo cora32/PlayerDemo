@@ -103,7 +103,7 @@ class InfoActivity : AppCompatActivity() {
     private fun setup() {
         val data = model.currentData.value!!
 
-        binding.tv.text = data.name
+        binding.tv.text = data.title
         binding.tv2.text = data.subtitle
         binding.genreTv.text = data.genre
 

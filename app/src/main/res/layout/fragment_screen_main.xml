@@ -43,6 +43,7 @@
             android:layout_width="240dp"
             android:layout_height="240dp"
             android:layout_gravity="center"
+            android:foreground="@drawable/rounded_ripple2"
             android:clickable="true"
             android:cropToPadding="false"
             android:scaleType="centerCrop" />

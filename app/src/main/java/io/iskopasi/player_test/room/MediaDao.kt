@@ -20,3 +20,12 @@ interface MediaDao {
     @Query("DELETE FROM mediadataentity WHERE media_id IN (:id)")
     fun remove(id: Int)
 }
+
+@Dao
+interface CachedTextDao {
+    @Query("SELECT * FROM cachedtextentity WHERE name IN (:name)")
+    fun getLyrics(name: String): CachedTextEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun cacheLyrics(item: CachedTextEntity)
+}

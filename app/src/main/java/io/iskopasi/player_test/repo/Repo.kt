@@ -8,6 +8,9 @@ import androidx.lifecycle.MutableLiveData
 import io.iskopasi.player_test.models.MediaData
 import io.iskopasi.player_test.repo.JsonApi
 import io.iskopasi.player_test.repo.getJSoupDocument
+import io.iskopasi.player_test.room.CachedTextDao
+import io.iskopasi.player_test.room.CachedTextEntity
+import io.iskopasi.player_test.utils.Utils.bg
 import io.iskopasi.player_test.utils.Utils.e
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,6 +39,7 @@ data class MediaFile(
 @Singleton
 class Repo @Inject constructor(
     private val jsonApi: JsonApi,
+    private val dao: CachedTextDao,
 ) {
     val currentData by lazy { MutableLiveData(MediaData.empty) }
 
@@ -135,7 +139,7 @@ class Repo @Inject constructor(
                     compilation ?: "",
                 )
 
-                val text = "data"
+                val text = "for_test"
                 val text2 = "Beach"
                 if (path.contains(text) || name.contains(text) || album.contains(text)
                     || path.contains(text2) || name.contains(text2) || album.contains(text2)
@@ -153,6 +157,10 @@ class Repo @Inject constructor(
     suspend fun getLyrics(name: String): String? {
         "[LYRICS] Trying to get lyrics for track: $name".e
 
+        return dao.getLyrics(name)?.text ?: getLyricsFromInet(name)
+    }
+
+    private suspend fun getLyricsFromInet(name: String): String? {
         jsonApi.getTracks(name)?.let { data ->
             "[LYRICS] Search request [OK]".e
 
@@ -185,5 +193,11 @@ class Repo @Inject constructor(
         } ?: "[LYRICS] Search request [FAIL]".e
 
         return null
+    }
+
+    fun cacheText(name: String, lyricsText: String) = bg {
+        "--> Caching lyrics for $name...".e
+
+        dao.cacheLyrics(CachedTextEntity(name = name, text = lyricsText))
     }
 }
