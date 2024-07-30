@@ -127,7 +127,7 @@ fun getImageBitmap(path: String): Bitmap? = MediaMetadataRetriever().run {
 
 fun ByteArray.toBitmap(): Bitmap? = BitmapFactory.decodeByteArray(this, 0, this.size)
 
-fun InputStream.toBitmap(): Bitmap = use { BitmapFactory.decodeStream(it) }
+fun InputStream.toBitmap(): Bitmap? = use { BitmapFactory.decodeStream(it) }
 
 val String.toBitmap: Bitmap?
     get() {
