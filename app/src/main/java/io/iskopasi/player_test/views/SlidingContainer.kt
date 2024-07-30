@@ -959,4 +959,17 @@ class SlidingContainer @JvmOverloads constructor(
 
         runAnimations(true)
     }
+
+    fun goToCenter() {
+        if (isFlinging) return
+
+        prevState = currentState
+        xScreenIndex = 1
+        yScreenIndex = 1
+        currentState = positionMap[yScreenIndex][xScreenIndex]
+
+        runAnimations(true)
+    }
+
+    fun isIsCenter(): Boolean = currentState == SlidingScreenPosition.CENTER
 }

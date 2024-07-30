@@ -179,7 +179,7 @@ fun MainFragment.setupCenter(
 
             disableControls()
         } else {
-            binding.tv.text = data.name
+            binding.tv.text = data.title
             binding.tv2.text = data.subtitle
 
             enableControls()
@@ -206,6 +206,7 @@ fun MainFragment.setupCenter(
 //            )
 //        )
     binding.image.setOnClickListener {
+        if (isEmpty) rootBinding.container.goToRight() else
         findNavController().navigate(R.id.to_info)
     }
 

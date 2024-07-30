@@ -31,4 +31,6 @@
     <string name="remove_pl">Remove</string>
     <string name="share">Share</string>
     <string name="no_data">No data</string>
+    <string name="no_lyrics">No lyrics available</string>
+    <string name="lyrics_error">Error: </string>
 </resources>

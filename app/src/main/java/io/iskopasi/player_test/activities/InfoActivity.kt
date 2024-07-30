@@ -2,11 +2,14 @@ package io.iskopasi.player_test.activities
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.drawable.AnimatedVectorDrawable
 import android.os.Bundle
+import android.view.View
 import android.view.WindowManager
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.transition.TransitionManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
@@ -17,7 +20,6 @@ import io.iskopasi.player_test.R
 import io.iskopasi.player_test.databinding.FragmentInfoBinding
 import io.iskopasi.player_test.models.InfoViewModel
 import io.iskopasi.player_test.models.MediaData
-import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.getAccent
 import io.iskopasi.player_test.utils.toBitmap
 import jp.wasabeef.glide.transformations.BlurTransformation
@@ -32,7 +34,6 @@ class InfoActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        "->> onCreate".e
 
         window.setFlags(
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
@@ -104,6 +105,7 @@ class InfoActivity : AppCompatActivity() {
 
         binding.tv.text = data.name
         binding.tv2.text = data.subtitle
+        binding.genreTv.text = data.genre
 
         lifecycleScope.launch(Dispatchers.IO) {
             val bitmap = data.path.toBitmap
@@ -128,6 +130,20 @@ class InfoActivity : AppCompatActivity() {
 
         binding.share.setOnClickListener {
             model.share(applicationContext, data.id)
+        }
+
+        model.lyrics.observe(this) {
+            binding.text.text = it
+        }
+
+        model.error.observe(this) {
+            binding.error.text = it
+        }
+
+        TransitionManager.beginDelayedTransition(binding.constr)
+        (binding.loaderIv.drawable as AnimatedVectorDrawable).start()
+        model.isLoading.observe(this) {
+            binding.loaderIv.visibility = if (it) View.VISIBLE else View.GONE
         }
     }
 }

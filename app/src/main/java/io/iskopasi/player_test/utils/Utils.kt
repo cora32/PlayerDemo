@@ -18,6 +18,8 @@ import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.palette.graphics.Palette
 import io.iskopasi.player_test.BuildConfig
 import io.iskopasi.player_test.utils.Utils.toBitmap
@@ -27,6 +29,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
 import kotlin.math.PI
 
@@ -64,6 +68,19 @@ object Utils {
         }
 
     fun ByteArray.toBitmap(): Bitmap = BitmapFactory.decodeByteArray(this, 0, this.size)
+
+
+    fun ViewModel.ui(block: suspend (CoroutineScope) -> Unit): Job = viewModelScope.launch(
+        Dispatchers.Main
+    ) {
+        block(this)
+    }
+
+    fun ViewModel.bg(block: suspend (CoroutineScope) -> Unit): Job = viewModelScope.launch(
+        Dispatchers.IO
+    ) {
+        block(this)
+    }
 
     fun bg(block: suspend (CoroutineScope) -> Unit): Job = CoroutineScope(Dispatchers.IO).launch {
         block(this)
@@ -195,3 +212,10 @@ fun Context.spToPx(sp: Float) = TypedValue.applyDimension(
     sp,
     resources.displayMetrics
 )
+
+fun getClient(): OkHttpClient {
+    val interceptor = HttpLoggingInterceptor().apply {
+        setLevel(HttpLoggingInterceptor.Level.NONE)
+    }
+    return OkHttpClient.Builder().addInterceptor(interceptor).build()
+}

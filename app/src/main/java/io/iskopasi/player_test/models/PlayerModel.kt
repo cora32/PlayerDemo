@@ -28,6 +28,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
 
+
 data class MediaData(
     val id: Int,
     val imageId: Int,
@@ -35,7 +36,14 @@ data class MediaData(
     val subtitle: String,
     val duration: Int,
     var isFavorite: Boolean,
-    var path: String
+    var path: String,
+    var genre: String,
+    var composer: String,
+    var author: String,
+    var title: String,
+    var writer: String,
+    var albumArtist: String,
+    var compilation: String,
 ) {
     companion object {
         val empty: MediaData = MediaData(
@@ -45,7 +53,14 @@ data class MediaData(
             "",
             0,
             false,
-            ""
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
         )
     }
 }
@@ -64,7 +79,7 @@ data class MediaMetadata(
 class PlayerModel @Inject constructor(
     context: Application,
     private val repo: Repo,
-    private val dao: MediaDao
+    private val dao: MediaDao,
 ) : AndroidViewModel(context) {
     private val images = listOf(
         R.drawable.none,
@@ -81,8 +96,10 @@ class PlayerModel @Inject constructor(
         R.drawable.i10,
     )
     private lateinit var iter: LoopIterator<MediaData>
+    val currentData: MutableLiveData<MediaData>
+        get() = repo.currentData
+
     private var previousData: MediaData? = null
-    val currentData by lazy { MutableLiveData(repo.currentData) }
     var playlist = MutableLiveData(listOf<MediaData>())
     var isPlaying = MutableLiveData(false)
     var isShuffling = MutableLiveData(false)
@@ -161,7 +178,6 @@ class PlayerModel @Inject constructor(
     }
 
     init {
-        "--> INITING VIEWMODEL".e
         bg {
             val dataList = repo.read(getApplication()).toMediaData()
                 .sortedBy { it.subtitle }
@@ -178,15 +194,6 @@ class PlayerModel @Inject constructor(
             .getIsFavourite(map { it.id })
             .associateBy { it.mediaId }
 
-        val all = dao.getAll()
-
-        all.forEach {
-            "--> allall: ${it.mediaId} ${it.isFavorite}".e
-        }
-        favMap.forEach {
-            "--> favMap: ${it.value.mediaId} ${it.value.isFavorite}".e
-        }
-
         return map { item ->
             MediaData(
                 item.id,
@@ -195,7 +202,14 @@ class PlayerModel @Inject constructor(
                 item.artist,
                 item.duration.toInt(),
                 favMap[item.id]?.isFavorite == true,
-                item.path
+                item.path,
+                genre = item.genre,
+                composer = item.composer,
+                author = item.author,
+                title = item.title,
+                writer = item.writer,
+                albumArtist = item.albumArtist,
+                compilation = item.compilation,
             )
         }
     }
