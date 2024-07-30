@@ -36,6 +36,13 @@ data class MediaFile(
     }
 }
 
+enum class LyricsStates(var text: String? = null) {
+    LYR_OK,
+    LYR_NOT_FOUND,
+    LYR_NOT_AVAIL,
+    LYR_ERROR,
+}
+
 @Singleton
 class Repo @Inject constructor(
     private val jsonApi: JsonApi,
@@ -154,13 +161,19 @@ class Repo @Inject constructor(
         return files
     }
 
-    suspend fun getLyrics(name: String): String? {
+    suspend fun getLyrics(name: String): LyricsStates {
         "[LYRICS] Trying to get lyrics for track: $name".e
 
-        return dao.getLyrics(name)?.text ?: getLyricsFromInet(name)
+        val cachedLyrics = dao.getLyrics(name)?.text
+        return if (cachedLyrics != null)
+            LyricsStates.LYR_OK.apply {
+                text = cachedLyrics
+            }
+        else
+            getLyricsFromInet(name)
     }
 
-    private suspend fun getLyricsFromInet(name: String): String? {
+    private suspend fun getLyricsFromInet(name: String): LyricsStates {
         jsonApi.getTracks(name)?.let { data ->
             "[LYRICS] Search request [OK]".e
 
@@ -171,6 +184,9 @@ class Repo @Inject constructor(
                     "[LYRICS] Received jsoup document!".e
 
                     val html = doc.html()
+
+                    if (html.indexOf("LYRIC NOT AVAILABLE") != -1) return LyricsStates.LYR_NOT_AVAIL
+
                     val firstAnchor = "\"lyrics\":\""
                     val indexStart = html.indexOf(firstAnchor)
                     val indexEnd =
@@ -184,7 +200,9 @@ class Repo @Inject constructor(
                             html.substring(indexStart + firstAnchor.lastIndex + 1..<indexEnd)
                         "-> lyrics: $indexStart $indexEnd $lyrics".e
 
-                        return lyrics
+                        return LyricsStates.LYR_OK.apply {
+                            text = lyrics
+                        }
                     } else {
                         "[LYRICS] Cannot find indexes! $indexStart $indexEnd".e
                     }
@@ -192,7 +210,7 @@ class Repo @Inject constructor(
             } ?: "[LYRICS] Slug [FAIL]".e
         } ?: "[LYRICS] Search request [FAIL]".e
 
-        return null
+        return LyricsStates.LYR_NOT_FOUND
     }
 
     fun cacheText(name: String, lyricsText: String) = bg {

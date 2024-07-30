@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.iskopasi.player_test.LyricsStates
 import io.iskopasi.player_test.R
 import io.iskopasi.player_test.Repo
 import io.iskopasi.player_test.room.MediaDao
@@ -26,8 +27,6 @@ class InfoViewModel @Inject constructor(
     val isLoading = MutableLiveData(true)
     val lyrics = MutableLiveData("")
     val error = MutableLiveData("")
-    private val noLyrics = ContextCompat.getString(context, R.string.no_lyrics)
-    private val lyricsError = ContextCompat.getString(context, R.string.lyrics_error)
 
     init {
         getLyrics()
@@ -44,20 +43,53 @@ class InfoViewModel @Inject constructor(
             val name = getName()
 
             try {
-                val lyricsText = repo.getLyrics(name)?.replace("\\n", "\n")
+                when (val lyricsState = repo.getLyrics(name)) {
+                    LyricsStates.LYR_OK -> {
+                        val text = lyricsState.text?.replace("\\n", "\n")
 
-                ui {
-                    if (lyricsText == null) {
-                        error.value = noLyrics
-                    } else {
-                        repo.cacheText(name, lyricsText)
-                        lyrics.value = lyricsText
-                        error.value = ""
+                        ui {
+                            if (text == null) {
+                                error.value = ContextCompat.getString(
+                                    getApplication(),
+                                    R.string.no_lyrics
+                                )
+                            } else {
+                                repo.cacheText(name, text)
+                                lyrics.value = text
+                                error.value = ""
+                            }
+                        }
                     }
+
+                    LyricsStates.LYR_ERROR -> error.value = ContextCompat.getString(
+                        getApplication(),
+                        R.string.lyrics_error
+                    )
+
+                    LyricsStates.LYR_NOT_FOUND -> error.value = ContextCompat.getString(
+                        getApplication(),
+                        R.string.no_lyrics
+                    )
+
+                    LyricsStates.LYR_NOT_AVAIL -> error.value = ContextCompat.getString(
+                        getApplication(),
+                        R.string.lyrics_not_avail
+                    )
+
+                    else -> error.value =
+                        ContextCompat.getString(getApplication(), R.string.no_lyrics)
                 }
+
             } catch (ex: Exception) {
                 ex.printStackTrace()
-                ui { error.value = "$lyricsError ${ex.message}" }
+                ui {
+                    error.value = "${
+                        ContextCompat.getString(
+                            getApplication(),
+                            R.string.lyrics_error
+                        )
+                    } ${ex.message}"
+                }
             } finally {
                 ui { isLoading.value = false }
             }

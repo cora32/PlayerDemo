@@ -33,4 +33,5 @@
     <string name="no_data">No data</string>
     <string name="no_lyrics">No lyrics available</string>
     <string name="lyrics_error">Error: </string>
+    <string name="lyrics_not_avail">These lyrics are not available in your region currently.</string>
 </resources>
