@@ -8,7 +8,8 @@ class FifoBitmap(
     bufferSize: Int,
     private val width: Int,
     private val height: Int,
-    private val baseColor: Int
+    private val baseColor: Int,
+    private val onFullSpectrumReady: (Bitmap) -> Unit
 ) {
     private var pixels = IntArray(bufferSize)
     private var bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -17,8 +18,7 @@ class FifoBitmap(
     @UnstableApi
     fun add(
         data: FloatArray,
-        maxRawAmplitude: Float,
-        onFullSpectrumReady: (Bitmap) -> Unit
+        maxRawAmplitude: Float
     ) {
         val valueFactor: Float = 255 / maxRawAmplitude
 

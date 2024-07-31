@@ -1,5 +1,6 @@
 package io.iskopasi.player_test.utils
 
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -222,3 +223,6 @@ fun getClient(): OkHttpClient {
     }
     return OkHttpClient.Builder().addInterceptor(interceptor).build()
 }
+
+val Context.notificationManager: NotificationManager?
+    get() = ContextCompat.getSystemService(this, NotificationManager::class.java)

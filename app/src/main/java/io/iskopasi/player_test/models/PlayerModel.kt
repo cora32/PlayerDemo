@@ -1,7 +1,9 @@
 package io.iskopasi.player_test.models
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
@@ -9,7 +11,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.iskopasi.player_test.App
 import io.iskopasi.player_test.MediaFile
+import io.iskopasi.player_test.PlayerService
 import io.iskopasi.player_test.R
 import io.iskopasi.player_test.Repo
 import io.iskopasi.player_test.adapters.ItemState
@@ -17,6 +21,7 @@ import io.iskopasi.player_test.room.MediaDao
 import io.iskopasi.player_test.room.MediaDataEntity
 import io.iskopasi.player_test.utils.FFTPlayer
 import io.iskopasi.player_test.utils.LoopIterator
+import io.iskopasi.player_test.utils.ServiceCommunicator
 import io.iskopasi.player_test.utils.Utils.bg
 import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
@@ -113,6 +118,71 @@ class PlayerModel @Inject constructor(
     private val baseColor = ContextCompat.getColor(getApplication(), R.color.text_color_1_trans3)
     private val idToListIndexMap = mutableMapOf<Int, Int>()
 
+    private val serviceCommunicator by lazy {
+        ServiceCommunicator("PlayerModel") { data, obj, comm ->
+            when (data) {
+//                MDEvent.CAMERA_REAR.name -> {
+//                    isFront = false
+//                }
+//
+//                MDEvent.CAMERA_FRONT.name -> {
+//                    isFront = true
+//                }
+//
+//                MDEvent.VIDEO_START.name -> {
+//                    isRecording = true
+//                    isBrightnessUp.value = true
+//
+//                    logMotionDetectionStart()
+//                }
+//
+//                MDEvent.VIDEO_STOP.name -> {
+//                    isRecording = false
+//                    isBrightnessUp.value = false
+//
+//                    logVideoStop()
+//                }
+//
+//                MDEvent.ARMED.name -> {
+//                    isArmed = true
+//                    isArming = false
+//                }
+//
+//                MDEvent.DISARMED.name -> {
+//                    isArmed = false
+//                }
+//
+//                MDEvent.TIMER.name -> {
+//                    val value = ((obj as Long) / 1000L).toInt()
+//
+//                    timerValue = if (value == 0) {
+//                        null
+//                    } else {
+//                        value.toString()
+//                    }
+//                }
+            }
+        }
+    }
+
+    @SuppressLint("UnsafeOptInUsageError")
+    private fun startService() {
+        val application = getApplication<App>()
+
+        application.bindService(
+            Intent(
+                application,
+                PlayerService::class.java
+            ),
+            serviceCommunicator.serviceConnection,
+            Context.BIND_AUTO_CREATE
+        )
+        ContextCompat.startForegroundService(
+            application,
+            Intent(application, PlayerService::class.java)
+        )
+    }
+
     private val player by lazy {
         FFTPlayer(
             context,
@@ -174,6 +244,8 @@ class PlayerModel @Inject constructor(
     }
 
     init {
+        startService()
+
         bg {
             val dataList = repo.read(getApplication()).toMediaData()
                 .sortedBy { it.subtitle }
@@ -397,7 +469,7 @@ class PlayerModel @Inject constructor(
             player.remove(indexInPlaylist)
         } else {
             "--> Adding $path to playlist with ID: $id".e
-            player.add(path, id)
+            player.add(path, id, item.title, item.subtitle)
         }
 
         updatePlaylist()

@@ -94,67 +94,70 @@ class Repo @Inject constructor(
             null, null, null
         )?.use {
             var id = 0
-            while (it.moveToNext()) {
-                val albumIdCol = it.getColumnIndex(MediaStore.Audio.Albums._ID)
-                val pathIdCol = it.getColumnIndex(MediaStore.Audio.Media.DATA)
-                val nameIdCol = it.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME)
-                val albumCol = it.getColumnIndex(MediaStore.Audio.Media.ALBUM)
-                val artistCol = it.getColumnIndex(MediaStore.Audio.Media.ARTIST)
-                val durationCol = it.getColumnIndex(MediaStore.Audio.Media.DURATION)
-                val composerCol = it.getColumnIndex(MediaStore.Audio.Media.COMPOSER)
-                val genreCol = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    it.getColumnIndex(MediaStore.Audio.Media.GENRE)
-                } else {
-                    -1
-                }
-                val authorCol = it.getColumnIndex(MediaStore.Audio.Media.AUTHOR)
-                val titleCol = it.getColumnIndex(MediaStore.Audio.Media.TITLE)
-                val writerCol = it.getColumnIndex(MediaStore.Audio.Media.WRITER)
-                val albumArtistCol = it.getColumnIndex(MediaStore.Audio.Media.ALBUM_ARTIST)
-                val compilationCol = it.getColumnIndex(MediaStore.Audio.Media.COMPILATION)
+            try {
+                while (it.moveToNext()) {
+                    val albumIdCol = it.getColumnIndex(MediaStore.Audio.Albums._ID)
+                    val pathIdCol = it.getColumnIndex(MediaStore.Audio.Media.DATA)
+                    val nameIdCol = it.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME)
+                    val albumCol = it.getColumnIndex(MediaStore.Audio.Media.ALBUM)
+                    val artistCol = it.getColumnIndex(MediaStore.Audio.Media.ARTIST)
+                    val durationCol = it.getColumnIndex(MediaStore.Audio.Media.DURATION)
+                    val composerCol = it.getColumnIndex(MediaStore.Audio.Media.COMPOSER)
+                    val genreCol = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        it.getColumnIndex(MediaStore.Audio.Media.GENRE)
+                    } else {
+                        -1
+                    }
+                    val authorCol = it.getColumnIndex(MediaStore.Audio.Media.AUTHOR)
+                    val titleCol = it.getColumnIndex(MediaStore.Audio.Media.TITLE)
+                    val writerCol = it.getColumnIndex(MediaStore.Audio.Media.WRITER)
+                    val albumArtistCol = it.getColumnIndex(MediaStore.Audio.Media.ALBUM_ARTIST)
+                    val compilationCol = it.getColumnIndex(MediaStore.Audio.Media.COMPILATION)
 
-                val albumId: Int = it.getInt(albumIdCol)
-                val path: String = it.getString(pathIdCol)
-                val name: String = it.getString(nameIdCol)
-                val album: String = it.getString(albumCol)
-                val artist: String = it.getString(artistCol)
-                val duration: Long = it.getLong(durationCol)
-                val genre: String? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-                    it.getString(genreCol)
-                else "(Unknown genre)"
-                val composer: String? = it.getString(composerCol)
-                val author: String? = it.getString(authorCol)
-                val title: String? = it.getString(titleCol)
-                val writer: String? = it.getString(writerCol)
-                val albumArtist: String? = it.getString(albumArtistCol)
-                val compilation: String? = it.getString(compilationCol)
+                    val albumId: Int = it.getInt(albumIdCol)
+                    val path: String = it.getString(pathIdCol)
+                    val name: String = it.getString(nameIdCol)
+                    val album: String = it.getString(albumCol)
+                    val artist: String = it.getString(artistCol)
+                    val duration: Long = it.getLong(durationCol)
+                    val genre: String? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                        it.getString(genreCol)
+                    else "(Unknown genre)"
+                    val composer: String? = it.getString(composerCol)
+                    val author: String? = it.getString(authorCol)
+                    val title: String? = it.getString(titleCol)
+                    val writer: String? = it.getString(writerCol)
+                    val albumArtist: String? = it.getString(albumArtistCol)
+                    val compilation: String? = it.getString(compilationCol)
 
-                val mFile = MediaFile(
-                    id++,
-                    albumId,
-                    path,
-                    name,
-                    album,
-                    artist,
-                    duration,
-                    genre ?: "",
-                    composer ?: "",
-                    author ?: "",
-                    title ?: "",
-                    writer ?: "",
-                    albumArtist ?: "",
-                    compilation ?: "",
-                )
+                    val mFile = MediaFile(
+                        id++,
+                        albumId,
+                        path,
+                        name,
+                        album,
+                        artist,
+                        duration,
+                        genre ?: "",
+                        composer ?: "",
+                        author ?: "",
+                        title ?: "",
+                        writer ?: "",
+                        albumArtist ?: "",
+                        compilation ?: "",
+                    )
 
-                val text = "for_test"
-                val text2 = "Beach"
-                if (path.contains(text) || name.contains(text) || album.contains(text)
-                    || path.contains(text2) || name.contains(text2) || album.contains(text2)
-                ) {
-                    files.add(mFile)
+                    val text = "for_test"
+                    val text2 = "Beach"
+                    if (path.contains(text) || name.contains(text) || album.contains(text)
+                        || path.contains(text2) || name.contains(text2) || album.contains(text2)
+                    ) {
+                        files.add(mFile)
 //                    "->> file: $mFile".e
+                    }
                 }
-
+            } catch (ex: Exception) {
+                ex.printStackTrace()
             }
         }
 

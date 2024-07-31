@@ -40,7 +40,6 @@ class HiltModules {
         .fallbackToDestructiveMigration()
         .build()
 
-
     @Provides
     @Singleton
     fun getDao(db: MediaDB): MediaDao = db.dao()
