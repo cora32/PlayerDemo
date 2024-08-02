@@ -9,7 +9,6 @@ import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
-import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.DownsampleStrategy
@@ -108,10 +107,10 @@ fun MainFragment.setupCenter(
         }
     }
 
-    fun setMediaImage(data: MediaData) {
+    fun setMediaImage(imageId: Int) {
         Glide
             .with(requireContext().applicationContext)
-            .load(data.imageId)
+            .load(imageId)
 //            .placeholder(spinner)
             .transition(DrawableTransitionOptions.withCrossFade())
             .circleCrop()
@@ -121,7 +120,7 @@ fun MainFragment.setupCenter(
 
         Glide
             .with(requireContext().applicationContext)
-            .load(data.imageId)
+            .load(imageId)
             .centerCrop()
 //            .placeholder(spinner)
             .transition(DrawableTransitionOptions.withCrossFade())
@@ -166,7 +165,7 @@ fun MainFragment.setupCenter(
 
             // Has to be run on UI
             lifecycleScope.launch {
-                if (bitmap != null) setBitmap(bitmap) else setMediaImage(data)
+                if (bitmap != null) setBitmap(bitmap) else setMediaImage(data.imageId)
             }
         }
 
@@ -206,8 +205,10 @@ fun MainFragment.setupCenter(
 //            )
 //        )
     binding.image.setOnClickListener {
-        if (isEmpty) rootBinding.container.goToRight() else
-        findNavController().navigate(R.id.to_info)
+        if (isEmpty) rootBinding.container.goToRight() else {
+            if (rootBinding.container.canPressButtons())
+                model.showInfo(this, model.currentData.value!!.id)
+        }
     }
 
     binding.volumeView.interceptTouches = { intercept ->
@@ -304,13 +305,13 @@ fun MainFragment.setupCenter(
     binding.btnLike.setOnClickListener {
         "isEmpty: $isEmpty".e
         if (isEmpty) rootBinding.container.goToRight() else
-        model.favorite()
+            model.favorite()
     }
 
     binding.btnShare.setOnClickListener {
         "isEmpty: $isEmpty".e
         if (isEmpty) rootBinding.container.goToRight() else
-        model.share(requireContext().applicationContext, 0)
+            model.share(requireContext().applicationContext, 0)
     }
 
 //        ui {

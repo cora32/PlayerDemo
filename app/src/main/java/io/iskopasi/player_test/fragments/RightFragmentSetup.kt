@@ -30,7 +30,7 @@ fun MainFragment.setupRight(
             model.addToPlaylist(index, id)
         }
         rootBinding.container.menuOnInfo = {
-            model.showInfo(index)
+            model.showInfo(this, id)
         }
         rootBinding.container.menuOnShare = {
             model.share(requireContext().applicationContext, index)

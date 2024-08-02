@@ -28,9 +28,11 @@
     <activity
         android:id="@+id/info_screen"
         android:name="io.iskopasi.player_test.activities.InfoActivity">
-        <!--        <action-->
-        <!--            android:id="@+id/to_perm_denied"-->
-        <!--            app:destination="@id/permission_denied" />-->
+
+        <argument
+            android:name="mediaId"
+            app:argType="integer"
+            android:defaultValue="-1" />
     </activity>
 
 </navigation>

@@ -1,7 +1,6 @@
 package io.iskopasi.player_test.utils
 
 import android.graphics.Bitmap
-import androidx.media3.common.util.UnstableApi
 
 
 class FifoBitmap(
@@ -15,7 +14,6 @@ class FifoBitmap(
     private var bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     private var x = 0
 
-    @UnstableApi
     fun add(
         data: FloatArray,
         maxRawAmplitude: Float
@@ -30,7 +28,14 @@ class FifoBitmap(
             pixels[position] = currentPixel
         }
 
-        bitmap.setPixels(pixels, x + 1, width, 0, 0, width, height)
+        // `recycle()` can be called before data was filled
+        if (bitmap.isRecycled) return
+
+        synchronized(bitmap) {
+            bitmap.setPixels(pixels, x + 1, width, 0, 0, width, height)
+        }
+
+        if (bitmap.isRecycled) return
 
         onFullSpectrumReady(bitmap)
 
@@ -40,6 +45,8 @@ class FifoBitmap(
     }
 
     fun recycle() {
-        bitmap.recycle()
+        synchronized(bitmap) {
+            bitmap.recycle()
+        }
     }
 }

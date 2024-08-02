@@ -103,4 +103,8 @@ class MainFragment : Fragment() {
             setupCenter(model, centerBinding, binding)
         }
     }
+
+    fun refreshList() {
+        model.refreshData()
+    }
 }

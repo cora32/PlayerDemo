@@ -22,7 +22,7 @@ class InfoViewModel @Inject constructor(
     private val repo: Repo,
     private val dao: MediaDao,
 ) : AndroidViewModel(context) {
-    val currentData: MutableLiveData<MediaData>
+    private val currentData: MutableLiveData<MediaData>
         get() = repo.currentData
     val isLoading = MutableLiveData(true)
     val lyrics = MutableLiveData("")
@@ -43,11 +43,13 @@ class InfoViewModel @Inject constructor(
             val name = getName()
 
             try {
-                when (val lyricsState = repo.getLyrics(name)) {
-                    LyricsStates.LYR_OK -> {
-                        val text = lyricsState.text?.replace("\\n", "\n")
+                val lyricsState = repo.getLyrics(name)
 
-                        ui {
+                ui {
+                    when (lyricsState) {
+                        LyricsStates.LYR_OK -> {
+                            val text = lyricsState.text?.replace("\\n", "\n")
+
                             if (text == null) {
                                 error.value = ContextCompat.getString(
                                     getApplication(),
@@ -59,25 +61,25 @@ class InfoViewModel @Inject constructor(
                                 error.value = ""
                             }
                         }
+
+                        LyricsStates.LYR_ERROR -> error.value = ContextCompat.getString(
+                            getApplication(),
+                            R.string.lyrics_error
+                        )
+
+                        LyricsStates.LYR_NOT_FOUND -> error.value = ContextCompat.getString(
+                            getApplication(),
+                            R.string.no_lyrics
+                        )
+
+                        LyricsStates.LYR_NOT_AVAIL -> error.value = ContextCompat.getString(
+                            getApplication(),
+                            R.string.lyrics_not_avail
+                        )
+
+                        else -> error.value =
+                            ContextCompat.getString(getApplication(), R.string.no_lyrics)
                     }
-
-                    LyricsStates.LYR_ERROR -> error.value = ContextCompat.getString(
-                        getApplication(),
-                        R.string.lyrics_error
-                    )
-
-                    LyricsStates.LYR_NOT_FOUND -> error.value = ContextCompat.getString(
-                        getApplication(),
-                        R.string.no_lyrics
-                    )
-
-                    LyricsStates.LYR_NOT_AVAIL -> error.value = ContextCompat.getString(
-                        getApplication(),
-                        R.string.lyrics_not_avail
-                    )
-
-                    else -> error.value =
-                        ContextCompat.getString(getApplication(), R.string.no_lyrics)
                 }
 
             } catch (ex: Exception) {
@@ -102,4 +104,6 @@ class InfoViewModel @Inject constructor(
 
         return "$artist+$trackName".toLowerCase(Locale.current)
     }
+
+    fun getItemById(id: Int): MediaData = repo.dataList[repo.idToIndex[id]!!]
 }

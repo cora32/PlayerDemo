@@ -1,21 +1,10 @@
 package io.iskopasi.player_test
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ServiceInfo
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.media.AudioFormat
-import android.os.Build
 import android.os.Handler
-import android.os.IBinder
-import androidx.core.app.NotificationCompat
-import androidx.core.app.ServiceCompat
 import androidx.media3.common.Player
 import androidx.media3.common.audio.AudioProcessor.EMPTY_BUFFER
 import androidx.media3.common.util.UnstableApi
@@ -31,14 +20,10 @@ import androidx.media3.exoplayer.audio.TeeAudioProcessor.AudioBufferSink
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
-import androidx.media3.session.MediaStyleNotificationHelper
 import com.paramsen.noise.Noise
 import io.iskopasi.player_test.activities.MainActivity
-import io.iskopasi.player_test.utils.CommunicatorCallback
-import io.iskopasi.player_test.utils.FFTPlayer.Companion.SAMPLE_SIZE
-import io.iskopasi.player_test.utils.ServiceCommunicator
+import io.iskopasi.player_test.models.SAMPLE_SIZE
 import io.iskopasi.player_test.utils.Utils.bg
-import io.iskopasi.player_test.utils.notificationManager
 import io.iskopasi.player_test.views.FFTView.Companion.FREQUENCY_BAND_LIMITS
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -50,17 +35,13 @@ import kotlin.math.sqrt
 @UnstableApi
 class PlayerService : MediaSessionService() {
     companion object {
-        lateinit var player: ExoPlayer
-
         var onFlush: ((Int, Int, String) -> Unit)? = null
-        var onHandleBuffer: ((MutableMap<Int, Float>, Float) -> Unit)? = null
-        var onPlayStatusChanged: ((Boolean) -> Unit)? = null
-        var onPlaylistFinished: (() -> Unit)? = null
-        var onMediaSet: ((Int) -> Unit)? = null
-        var addBitmap: ((FloatArray, Float) -> Unit)? = null
+        var onFrequencyFFTReady: ((MutableMap<Int, Float>, Float) -> Unit)? = null
+        var onSpectrumReady: ((FloatArray, Float) -> Unit)? = null
     }
 
-    private var mediaSession: MediaSession? = null
+    private lateinit var player: ExoPlayer
+    private lateinit var mediaSession: MediaSession
 
     private val pendingIntent by lazy {
         PendingIntent.getActivity(
@@ -71,38 +52,6 @@ class PlayerService : MediaSessionService() {
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-    }
-    private val prevPendingIntent by lazy {
-        PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java).apply {
-                setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-    }
-    private val pausePendingIntent by lazy {
-        PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java).apply {
-                setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-    }
-    private val nextPendingIntent by lazy {
-        PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java).apply {
-                setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-    }
-    private val commandHandler: CommunicatorCallback = { data, obj, comm ->
     }
     private val bufferSink by lazy {
         object : AudioBufferSink {
@@ -264,9 +213,9 @@ class PlayerService : MediaSessionService() {
                     startIndex = endIndex
                 }
 
-                addBitmap?.invoke(chartData, maxRawAmplitude)
+                onSpectrumReady?.invoke(chartData, maxRawAmplitude)
 
-                onHandleBuffer?.invoke(frequencyMap, maxAvgAmplitude)
+                onFrequencyFFTReady?.invoke(frequencyMap, maxAvgAmplitude)
             }
         }
     }
@@ -321,13 +270,17 @@ class PlayerService : MediaSessionService() {
 
         player = ExoPlayer.Builder(this)
             .setRenderersFactory(rendererFactory)
+            .build().apply {
+                prepare()
+            }
+        mediaSession = MediaSession.Builder(this, player)
+            .setSessionActivity(pendingIntent)
             .build()
-        mediaSession = MediaSession.Builder(this, player).build()
     }
 
     // The user dismissed the app from the recent tasks
     override fun onTaskRemoved(rootIntent: Intent?) {
-        val player = mediaSession?.player!!
+        val player = mediaSession.player
         if (!player.playWhenReady
             || player.mediaItemCount == 0
             || player.playbackState == Player.STATE_ENDED
@@ -338,106 +291,14 @@ class PlayerService : MediaSessionService() {
         }
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession =
         mediaSession
 
-    // Receives commands from activity
-    private val serviceCommunicator = ServiceCommunicator("Service", commandHandler)
-
-    override fun onBind(intent: Intent?): IBinder? {
-        super.onBind(intent)
-
-        return serviceCommunicator.onBind()
-    }
-
     override fun onDestroy() {
-        mediaSession?.run {
+        mediaSession.run {
             player.release()
             release()
-            mediaSession = null
         }
         super.onDestroy()
-    }
-
-    private fun getBitmap(): Bitmap? {
-        return BitmapFactory.decodeResource(resources, R.drawable.i2)
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val notificationId = 123
-        val channelId = getChannel()
-//        val notificationLayout = RemoteViews(packageName, R.layout.notification_small)
-//        val notificationLayoutExpanded = RemoteViews(packageName, R.layout.notification_large)
-
-        val notification = NotificationCompat.Builder(this, channelId).apply {
-
-//            setStyle(NotificationCompat.BigTextStyle().bigText("Some other text"))
-
-//            setContent(notificationLayoutExpanded)
-//            setCustomContentView(notificationLayoutExpanded)
-//            setCustomBigContentView(notificationLayoutExpanded)
-            setSmallIcon(R.mipmap.ic_launcher_round)
-            setLargeIcon(getBitmap())
-
-            setPriority(NotificationCompat.PRIORITY_MAX)
-//            setCategory(NotificationCompat.CATEGORY_NAVIGATION)
-
-//            setContentTitle("Detecting motions...")
-//            setContentText("Foreground service to keep camera on")
-
-            // Show controls on lock screen even when user hides sensitive content.
-            setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-
-            setShowWhen(true)
-            setContentIntent(pendingIntent)
-            setOngoing(true)
-            setAutoCancel(false)
-            // Add media control buttons that invoke intents in your media service
-            addAction(R.drawable.round_skip_previous_24, "Previous", prevPendingIntent) // #0
-            addAction(R.drawable.pause_start_avd, "Pause", pausePendingIntent) // #1
-            addAction(R.drawable.round_skip_next_24, "Next", nextPendingIntent) // #2
-
-                .setStyle(
-                    MediaStyleNotificationHelper.MediaStyle(mediaSession!!)
-                        .setShowActionsInCompactView(1 /* #1: pause button \*/)
-                )
-                .setContentTitle(player.currentMediaItem?.mediaMetadata?.displayTitle ?: "")
-                .setContentText(player.currentMediaItem?.mediaMetadata?.albumArtist ?: "")
-
-        }.build()
-
-        ServiceCompat.startForeground(
-            this,
-            notificationId,
-            notification,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-            } else 0
-        )
-
-
-        return super.onStartCommand(intent, flags, startId)
-    }
-
-    private fun getChannel(): String {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "playback_channel"
-            val channelName = "Playback"
-
-            val channel = NotificationChannel(
-                channelId,
-                channelName,
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                lightColor = Color.RED
-                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-            }
-
-            notificationManager!!.createNotificationChannel(channel)
-
-            channelId
-        } else {
-            ""
-        }
     }
 }

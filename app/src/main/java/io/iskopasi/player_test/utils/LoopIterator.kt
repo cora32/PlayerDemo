@@ -2,14 +2,14 @@ package io.iskopasi.player_test.utils
 
 import io.iskopasi.player_test.utils.Utils.e
 
-class LoopIterator<T>(private val data: List<T> = listOf()) {
+class LoopIterator<T>(val dataList: List<T> = listOf()) {
     var value: T? = null
     private var index = -1
 
     init {
-        if (data.isNotEmpty()) {
+        if (dataList.isNotEmpty()) {
             index = 0
-            value = data[index]
+            value = dataList[index]
         }
     }
 
@@ -20,11 +20,11 @@ class LoopIterator<T>(private val data: List<T> = listOf()) {
     fun next(): T? {
         if (index == -1) return null
 
-        value = if (index < data.size - 1) {
-            data[++index]
+        value = if (index < dataList.size - 1) {
+            dataList[++index]
         } else {
             index = 0
-            data[index]
+            dataList[index]
         }
 
         "next curIndex: index=$index; val=$value".e
@@ -36,10 +36,10 @@ class LoopIterator<T>(private val data: List<T> = listOf()) {
         if (index == -1) return null
 
         value = if (index > 0) {
-            data[--index]
+            dataList[--index]
         } else {
-            index = data.size - 1
-            data[index]
+            index = dataList.size - 1
+            dataList[index]
         }
 
         "prev curIndex: index=$index; val=$value".e
@@ -48,15 +48,15 @@ class LoopIterator<T>(private val data: List<T> = listOf()) {
     }
 
     fun setIndex(id: Int): T? {
-        if (0 <= id && id < data.size) {
+        if (0 <= id && id < dataList.size) {
             index = id
-            value = data[index]
+            value = dataList[index]
         }
 
-        "setIndex to $id (0 <= $id < ${data.size}): index=$index; val=$value".e
+        "setIndex to $id (0 <= $id < ${dataList.size}): index=$index; val=$value".e
 
         return value
     }
 
-    fun get(index: Int) = data[index]
+    fun get(index: Int) = dataList[index]
 }

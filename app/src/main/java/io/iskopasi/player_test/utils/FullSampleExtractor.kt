@@ -14,7 +14,7 @@ import androidx.media3.common.util.MediaFormatUtil.KEY_MAX_BIT_RATE
 import androidx.media3.common.util.UnstableApi
 import com.paramsen.noise.Noise
 import io.iskopasi.player_test.models.MediaMetadata
-import io.iskopasi.player_test.utils.FFTPlayer.Companion.SAMPLE_SIZE
+import io.iskopasi.player_test.models.SAMPLE_SIZE
 import io.iskopasi.player_test.utils.Utils.e
 import java.io.IOException
 import java.nio.ByteBuffer

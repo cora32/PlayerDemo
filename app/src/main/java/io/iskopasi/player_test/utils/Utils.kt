@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.media.AudioManager
 import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.util.Log
 import android.util.TypedValue
 import android.view.View
@@ -23,6 +24,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.palette.graphics.Palette
 import io.iskopasi.player_test.BuildConfig
+import io.iskopasi.player_test.utils.Utils.e
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -117,9 +119,13 @@ object Utils {
 
 data class ColorsData(val vibrant: Int, val darkVibrant: Int)
 
+val String.hasEmbeddedPicture: Boolean
+    get() = getImageBitmap(this) != null
+
 fun getImageBitmap(path: String): Bitmap? = MediaMetadataRetriever().run {
     if (path.isEmpty()) return null
 
+    "--> setDataSource: $path".e
     setDataSource(path)
 
 //    embeddedPicture?.toBitmap()
@@ -130,10 +136,11 @@ fun ByteArray.toBitmap(): Bitmap? = BitmapFactory.decodeByteArray(this, 0, this.
 
 fun InputStream.toBitmap(): Bitmap? = use { BitmapFactory.decodeStream(it) }
 
+val Uri.toBitmap: Bitmap?
+    get() = getImageBitmap(this.toString())
+
 val String.toBitmap: Bitmap?
-    get() {
-        return getImageBitmap(this)
-    }
+    get() = getImageBitmap(this)
 
 fun Int.getAccent(context: Context, path: String, block: (ColorsData?) -> Unit) {
     // Retrieves either bitmap from path or bitmap from resource

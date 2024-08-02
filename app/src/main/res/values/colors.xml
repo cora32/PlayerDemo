@@ -20,6 +20,7 @@
     <color name="gradient_start">#83B1B1B1</color>
     <color name="gradient_end">#393636</color>
     <color name="text_color_1">#CDEDEDED</color>
+    <color name="menu_bg">#EDEDEDED</color>
     <color name="text_color_1_trans">#59EDEDED</color>
     <color name="text_color_1_trans2">#ABEDEDED</color>
     <color name="text_color_1_trans3">#DAEDEDED</color>

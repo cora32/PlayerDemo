@@ -29,7 +29,7 @@ class HiltModules {
     @Provides
     @Singleton
     fun getRepo(@ApplicationContext context: Context): Repo =
-        Repo(getApiJson(), getCacheDao(getDB(context)))
+        Repo(getApiJson(), getDao(getDB(context)), getCacheDao(getDB(context)))
 
     @Provides
     @Singleton

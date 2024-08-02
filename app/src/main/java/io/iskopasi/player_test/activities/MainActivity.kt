@@ -1,6 +1,7 @@
 package io.iskopasi.player_test.activities
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -10,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import dagger.hilt.android.AndroidEntryPoint
 import io.iskopasi.player_test.R
 import io.iskopasi.player_test.databinding.NavActivityBinding
+import io.iskopasi.player_test.fragments.MainFragment
 
 
 @AndroidEntryPoint
@@ -19,13 +21,23 @@ class MainActivity : AppCompatActivity() {
     private val requester =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { resultMap ->
             if (resultMap.values.all { it }) {
-                /// TODO: update ui in fragments
-                sendIntent
+                updateUI()
             } else {
                 Toast.makeText(this, R.string.perm_request, Toast.LENGTH_SHORT).show()
 //            findNavController(R.id.nav_host_fragment).navigate(R.id.to_perm_denied)
             }
         }
+
+    @SuppressLint("UnsafeOptInUsageError")
+    private fun updateUI() {
+        val mainFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+            ?.getChildFragmentManager()
+            ?.fragments
+            ?.get(0) as MainFragment
+
+        mainFragment.refreshList()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

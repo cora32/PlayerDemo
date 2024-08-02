@@ -491,10 +491,10 @@ class SlidingContainer @JvmOverloads constructor(
                 bottomArrow?.show()
             }
 
-            SlidingScreenPosition.TOP_LEFT -> TODO()
-            SlidingScreenPosition.TOP_RIGHT -> TODO()
-            SlidingScreenPosition.BOTTOM_RIGHT -> TODO()
-            SlidingScreenPosition.BOTTOM_LEFT -> TODO()
+            SlidingScreenPosition.TOP_LEFT -> goToCenter()
+            SlidingScreenPosition.TOP_RIGHT -> goToCenter()
+            SlidingScreenPosition.BOTTOM_RIGHT -> goToCenter()
+            SlidingScreenPosition.BOTTOM_LEFT -> goToCenter()
         }
     }
 

@@ -20,17 +20,24 @@ import io.iskopasi.player_test.R
 import io.iskopasi.player_test.databinding.FragmentInfoBinding
 import io.iskopasi.player_test.models.InfoViewModel
 import io.iskopasi.player_test.models.MediaData
+import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.getAccent
 import io.iskopasi.player_test.utils.toBitmap
 import jp.wasabeef.glide.transformations.BlurTransformation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+//@Keep
+//class InfoActivityArgs : Parcelable {
+//
+//}
+
 @SuppressLint("UnsafeOptInUsageError")
 @AndroidEntryPoint
 class InfoActivity : AppCompatActivity() {
     private lateinit var binding: FragmentInfoBinding
     private val model: InfoViewModel by viewModels()
+//    val args: InfoActivityArgs by navArgs()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,8 +49,11 @@ class InfoActivity : AppCompatActivity() {
 
         binding = FragmentInfoBinding.inflate(layoutInflater)
 
-        setup()
+        val mediaId = intent.getIntExtra("mediaId", -1)
 
+        "--> Recevied index: $mediaId".e
+
+        setup(mediaId)
 
         setContentView(binding.root)
     }
@@ -100,8 +110,8 @@ class InfoActivity : AppCompatActivity() {
             .into(binding.imageBg)
     }
 
-    private fun setup() {
-        val data = model.currentData.value!!
+    private fun setup(mediaId: Int) {
+        val data = model.getItemById(mediaId)
 
         binding.tv.text = data.title
         binding.tv2.text = data.subtitle

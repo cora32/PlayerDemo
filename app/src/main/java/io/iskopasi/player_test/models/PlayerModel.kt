@@ -1,30 +1,43 @@
 package io.iskopasi.player_test.models
 
-import android.annotation.SuppressLint
 import android.app.Application
+import android.content.ComponentName
+import android.content.ContentResolver
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
+import android.media.MediaExtractor
+import android.media.MediaFormat
+import android.media.MediaFormat.KEY_BIT_RATE
+import android.media.MediaFormat.KEY_CHANNEL_COUNT
+import android.media.MediaFormat.KEY_MIME
+import android.media.MediaFormat.KEY_SAMPLE_RATE
+import android.net.Uri
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.common.util.MediaFormatUtil.KEY_MAX_BIT_RATE
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
+import androidx.navigation.fragment.findNavController
+import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.iskopasi.player_test.App
-import io.iskopasi.player_test.MediaFile
 import io.iskopasi.player_test.PlayerService
 import io.iskopasi.player_test.R
 import io.iskopasi.player_test.Repo
 import io.iskopasi.player_test.adapters.ItemState
+import io.iskopasi.player_test.fragments.MainFragment
+import io.iskopasi.player_test.fragments.MainFragmentDirections
 import io.iskopasi.player_test.room.MediaDao
 import io.iskopasi.player_test.room.MediaDataEntity
-import io.iskopasi.player_test.utils.FFTPlayer
-import io.iskopasi.player_test.utils.LoopIterator
-import io.iskopasi.player_test.utils.ServiceCommunicator
-import io.iskopasi.player_test.utils.Utils.bg
+import io.iskopasi.player_test.utils.FifoBitmap
 import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
+import io.iskopasi.player_test.utils.hasEmbeddedPicture
 import io.iskopasi.player_test.utils.share
 import io.iskopasi.player_test.views.FFTChartData
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +45,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
+import kotlin.math.min
 
+const val SAMPLE_SIZE = 4096
 
 data class MediaData(
     val id: Int,
@@ -86,17 +101,6 @@ class PlayerModel @Inject constructor(
     private val repo: Repo,
     private val dao: MediaDao,
 ) : AndroidViewModel(context) {
-    private val images = listOf(
-        R.drawable.none,
-        R.drawable.i2,
-        R.drawable.i3,
-        R.drawable.i4,
-        R.drawable.i5,
-        R.drawable.i6,
-        R.drawable.i7,
-        R.drawable.i10,
-    )
-    private lateinit var iter: LoopIterator<MediaData>
     val currentData: MutableLiveData<MediaData>
         get() = repo.currentData
 
@@ -116,83 +120,95 @@ class PlayerModel @Inject constructor(
     var allMediaActiveMapData = MutableLiveData(mutableMapOf<Int, Boolean>())
     var metadata = MutableLiveData(MediaMetadata())
     private val baseColor = ContextCompat.getColor(getApplication(), R.color.text_color_1_trans3)
-    private val idToListIndexMap = mutableMapOf<Int, Int>()
+    private var allowPlayingStateChange = true
+    private var fifoBitmap: FifoBitmap? = null
+    private val listener by lazy {
+        object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                "--> onIsPlayingChanged: $isPlaying".e
 
-    private val serviceCommunicator by lazy {
-        ServiceCommunicator("PlayerModel") { data, obj, comm ->
-            when (data) {
-//                MDEvent.CAMERA_REAR.name -> {
-//                    isFront = false
-//                }
-//
-//                MDEvent.CAMERA_FRONT.name -> {
-//                    isFront = true
-//                }
-//
-//                MDEvent.VIDEO_START.name -> {
-//                    isRecording = true
-//                    isBrightnessUp.value = true
-//
-//                    logMotionDetectionStart()
-//                }
-//
-//                MDEvent.VIDEO_STOP.name -> {
-//                    isRecording = false
-//                    isBrightnessUp.value = false
-//
-//                    logVideoStop()
-//                }
-//
-//                MDEvent.ARMED.name -> {
-//                    isArmed = true
-//                    isArming = false
-//                }
-//
-//                MDEvent.DISARMED.name -> {
-//                    isArmed = false
-//                }
-//
-//                MDEvent.TIMER.name -> {
-//                    val value = ((obj as Long) / 1000L).toInt()
-//
-//                    timerValue = if (value == 0) {
-//                        null
-//                    } else {
-//                        value.toString()
-//                    }
-//                }
+                if (isPlaying) {
+//                    onPlaylistStarted()
+                } else {
+                    // Not playing because playback is paused, ended, suppressed, or the player
+                    // is buffering, stopped or failed. Check player.playWhenReady,
+                    // player.playbackState, player.playbackSuppressionReason and
+                    // player.playerError for details.
+
+                    if (allowPlayingStateChange) onPlaylistFinished()
+                }
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                super.onPlaybackStateChanged(playbackState)
+                "--> onPlaybackStateChanged: $playbackState".e
+
+                when (playbackState) {
+                    Player.STATE_IDLE -> {
+                        "FFTPlayer: STATE_IDLE".e
+                    }
+
+                    Player.STATE_BUFFERING -> {
+                        "FFTPlayer: STATE_BUFFERING".e
+                    }
+
+                    Player.STATE_READY -> {
+                        "FFTPlayer: STATE_READY".e
+                    }
+
+                    Player.STATE_ENDED -> {
+                        "FFTPlayer: STATE_ENDED".e
+                    }
+                }
+            }
+
+            override fun onEvents(player: Player, events: Player.Events) {
+                super.onEvents(player, events)
+                "--> onEvents: $events".e
+
+                if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) {
+                    if (allowPlayingStateChange) onMediaSet(player.currentMediaItemIndex)
+                } else if (events.contains(Player.EVENT_IS_PLAYING_CHANGED)) {
+                    if (allowPlayingStateChange) onPlayStatusChanged(player.isPlaying)
+                }
             }
         }
     }
 
-    @SuppressLint("UnsafeOptInUsageError")
-    private fun startService() {
-        val application = getApplication<App>()
+    private val sessionToken =
+        SessionToken(context, ComponentName(context, PlayerService::class.java))
+    private val controllerFuture =
+        MediaController.Builder(context, sessionToken).buildAsync()
+    private lateinit var controller: MediaController
 
-        application.bindService(
-            Intent(
-                application,
-                PlayerService::class.java
-            ),
-            serviceCommunicator.serviceConnection,
-            Context.BIND_AUTO_CREATE
-        )
-        ContextCompat.startForegroundService(
-            application,
-            Intent(application, PlayerService::class.java)
-        )
+    init {
+        PlayerService.onFlush = ::onFlush
+        PlayerService.onFrequencyFFTReady = ::onFrequencyFFTReady
+        PlayerService.onSpectrumReady = ::onSpectrumReady
+
+        controllerFuture.addListener({
+            refreshData()
+
+            controller = controllerFuture.get()
+            "controller connected: $controller".e
+            controller.addListener(listener)
+
+            restoreCurrentUI()
+        }, MoreExecutors.directExecutor())
     }
 
-    private val player by lazy {
-        FFTPlayer(
-            context,
-            onHandleBuffer = ::onHandleBuffer,
-            onFullSpectrumReady = ::onFullSpectrumReady,
-            onPlaylistFinished = ::onPlaylistFinished,
-            onMediaSet = ::onMediaSet,
-            onPlayStatusChanged = ::onPlayStatusChanged,
-            onFlush = ::onFlush,
-        )
+    private fun restoreCurrentUI() {
+        for (i in 0..<controller.mediaItemCount) {
+            val item = controller.getMediaItemAt(i)
+            val mediaId = item.mediaId.toInt()
+            val mediaIndex = repo.idToIndex.getOrDefault(mediaId, -1)
+
+            addToPlaylist(index = mediaIndex, id = mediaId, invokeController = false)
+        }
+    }
+
+    private fun onSpectrumReady(chartData: FloatArray, maxRawAmplitude: Float) {
+        fifoBitmap?.add(chartData, maxRawAmplitude)
     }
 
     private fun onFlush(sampleRateHz: Int, channelCount: Int, encoding: String) {
@@ -225,13 +241,13 @@ class PlayerModel @Inject constructor(
     }
 
     private fun startRequestingSeekerPositions() = ui {
-        while (player.isPlaying) {
-            currentProgress.value = player.getCurrentPosition()
+        while (controller.isPlaying) {
+            currentProgress.value = controller.getCurrentPosition()
             delay(500L)
         }
     }
 
-    private fun onHandleBuffer(frequencyMap: MutableMap<Int, Float>, maxAmplitude: Float) {
+    private fun onFrequencyFFTReady(frequencyMap: MutableMap<Int, Float>, maxAmplitude: Float) {
         if (isPlaying.value == true) {
             ui {
                 fftChartData.value =
@@ -240,45 +256,6 @@ class PlayerModel @Inject constructor(
                         maxAmplitude = maxAmplitude
                     )
             }
-        }
-    }
-
-    init {
-        startService()
-
-        bg {
-            val dataList = repo.read(getApplication()).toMediaData()
-                .sortedBy { it.subtitle }
-            iter = LoopIterator(dataList)
-
-            ui {
-                mediaList.value = dataList
-            }
-        }
-    }
-
-    private fun List<MediaFile>.toMediaData(): List<MediaData> {
-        val favMap = dao
-            .getIsFavourite(map { it.id })
-            .associateBy { it.mediaId }
-
-        return map { item ->
-            MediaData(
-                item.id,
-                images.random(),
-                item.name,
-                item.artist,
-                item.duration.toInt(),
-                favMap[item.id]?.isFavorite == true,
-                item.path,
-                genre = item.genre,
-                composer = item.composer,
-                author = item.author,
-                title = item.title,
-                writer = item.writer,
-                albumArtist = item.albumArtist,
-                compilation = item.compilation,
-            )
         }
     }
 
@@ -291,10 +268,10 @@ class PlayerModel @Inject constructor(
         currentData.value = data
         currentActiveIndex.value = playlistIndex
 
-        "--> currentActiveMediaIndex: ${data.path} ${data.id} ${idToListIndexMap.keys}".e
-        currentActiveMediaIndex.value = idToListIndexMap[currentData.value!!.id]
+        "--> currentActiveMediaIndex: ${data.path} ${data.id} ${repo.idToIndex.keys}".e
+        currentActiveMediaIndex.value = repo.idToIndex[currentData.value!!.id]
 
-        isFavorite.value = iter.value?.isFavorite
+        isFavorite.value = repo.iter.value?.isFavorite
         currentProgress.value = 0
     }
 
@@ -314,17 +291,51 @@ class PlayerModel @Inject constructor(
     }
 
     fun prev() {
-        player.prev()
+        controller.seekToPreviousMediaItem()
     }
 
     fun next() {
-        player.next()
+        controller.seekToNextMediaItem()
     }
 
     fun setSeekPosition(progress: Long) {
         "Setting progress to: $progress".e
         currentProgress.value = progress
-        player.seekTo(progress)
+        controller.seekTo(progress)
+    }
+
+    private fun prepareFifoBitmap(path: String, baseColor: Int) {
+        fifoBitmap?.recycle()
+
+        val width = File(path).length() / SAMPLE_SIZE
+        val height = SAMPLE_SIZE / 4
+        val bufferSize = width.toInt() * height * 2
+
+        fifoBitmap = FifoBitmap(
+            bufferSize,
+            min(width.toInt(), 500),
+            height,
+            baseColor,
+            ::onFullSpectrumReady
+        )
+    }
+
+    private fun extractMetadata(path: String): MediaMetadata {
+        val extractor = MediaExtractor().apply { setDataSource(path) }
+        val format = extractor.getTrackFormat(0)
+        val maxBitrate = format.getIntegerSafe(KEY_MAX_BIT_RATE)
+        val bitrate = format.getIntegerSafe(KEY_BIT_RATE)
+        val sampleRate = format.getIntegerSafe(KEY_SAMPLE_RATE)
+        val channelCount = format.getIntegerSafe(KEY_CHANNEL_COUNT)
+        val mime = format.getStringSafe(KEY_MIME)
+
+        return MediaMetadata(
+            maxBitrate = maxBitrate,
+            bitrate = bitrate,
+            sampleRateHz = sampleRate,
+            channelCount = channelCount,
+            mime = mime
+        )
     }
 
     private fun setPlayStatus(isPlayingValue: Boolean) {
@@ -335,8 +346,8 @@ class PlayerModel @Inject constructor(
             currentActiveState.value = ItemState.PLAYING
             val path = currentData.value!!.path
 
-            player.prepareFifoBitmap(path, baseColor)
-            val tempMetadata = player.extractMetadata(path)
+            prepareFifoBitmap(path, baseColor)
+            val tempMetadata = extractMetadata(path)
 
             metadata.value = metadata.value?.apply {
                 this.maxBitrate = tempMetadata.maxBitrate
@@ -358,28 +369,28 @@ class PlayerModel @Inject constructor(
     }
 
     fun play(auto: Boolean = false) {
-        player.setAutoPlay(true)
-        player.play(auto)
+        controller.play()
     }
 
     fun pause() {
         isPlaying.value = false
-        player.pause()
+        controller.pause()
     }
 
     fun onPause() {
-        player.setAutoPlay(false)
+        controller.playWhenReady = false
         pause()
     }
 
     fun shuffle() {
         isShuffling.value = !isShuffling.value!!
-        player.shuffle(isShuffling.value!!)
+        controller.shuffleModeEnabled = isShuffling.value!!
     }
 
     fun repeat() {
         isRepeating.value = !isRepeating.value!!
-        player.repeat(isRepeating.value!!)
+        controller.repeatMode =
+            if (isRepeating.value!!) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
     }
 
     fun favorite() {
@@ -408,15 +419,15 @@ class PlayerModel @Inject constructor(
         File("").share(context, name, subtitle)
     }
 
-    fun showInfo(index: Int) {
-
+    fun showInfo(fragment: MainFragment, mediaId: Int) {
+        fragment.findNavController().navigate(MainFragmentDirections.toInfo(mediaId))
     }
 
     fun removeFromPlaylist(index: Int, id: Int) {
-        val listIndex = idToListIndexMap.getOrDefault(id, -1)
+        val listIndex = repo.idToIndex.getOrDefault(id, -1)
         if (listIndex >= 0) {
             allMediaActiveMapData.value = allMediaActiveMapData.value?.apply {
-                player.remove(index)
+                controller.removeMediaItem(index)
                 remove(listIndex)
             }
 
@@ -424,18 +435,27 @@ class PlayerModel @Inject constructor(
         }
     }
 
+    private fun getIdToPlaylistIndexMap(): MutableMap<Int, Int> {
+        val map = mutableMapOf<Int, Int>()
+        for (i in 0 until controller.mediaItemCount) {
+            map[controller.getMediaItemAt(i).mediaId.toInt()] = i
+        }
+
+        return map
+    }
+
     private fun updatePlaylist() {
-        playlist.value = player.getIdToPlaylistIndexMap().map {
-            iter.get(idToListIndexMap.getOrDefault(it.key, -1))
+        playlist.value = getIdToPlaylistIndexMap().map {
+            repo.iter.get(repo.idToIndex.getOrDefault(it.key, -1))
         }
     }
 
     fun setAsPlaylist(index: Int, id: Int) {
-        player.clearPlaylist()
+        controller.clearMediaItems()
         allMediaActiveMapData.value = mutableMapOf()
-        idToListIndexMap.clear()
+//        idToListIndexMap.clear()
 
-        player.setAutoPlay(true)
+        controller.playWhenReady = true
         "Playing single media at $index (playlist): id = $id".e
         addToPlaylist(index, id)
     }
@@ -443,10 +463,10 @@ class PlayerModel @Inject constructor(
     /*
     * index - index in media RecyclerView
     * */
-    fun addToPlaylist(index: Int, id: Int) {
-        val item = iter.get(index)
+    fun addToPlaylist(index: Int, id: Int, invokeController: Boolean = true) {
+        val item = repo.iter.get(index)
         val path = item.path
-        val idToPlaylistIndexMap = player.getIdToPlaylistIndexMap()
+        val idToPlaylistIndexMap = getIdToPlaylistIndexMap()
 
         // Add/Remove highlight from Media screen
         val isActive = allMediaActiveMapData.value?.getOrDefault(index, false)
@@ -454,30 +474,95 @@ class PlayerModel @Inject constructor(
             if (isActive == true) {
                 "--> Deactivating $index in Media".e
                 remove(index)
-                idToListIndexMap.remove(id)
+//                idToListIndexMap.remove(id)
             } else {
                 "--> Highlighting $index in Media; id = $id".e
                 put(index, true)
-                idToListIndexMap[id] = index
+//                idToListIndexMap[id] = index
             }
         }
 
         // Add/Remove from Playlist
-        val indexInPlaylist = idToPlaylistIndexMap.getOrDefault(id, -1)
-        if (indexInPlaylist != -1) {
-            "--> Removing $indexInPlaylist from playlist".e
-            player.remove(indexInPlaylist)
-        } else {
-            "--> Adding $path to playlist with ID: $id".e
-            player.add(path, id, item.title, item.subtitle)
+        if (invokeController) {
+            val indexInPlaylist = idToPlaylistIndexMap.getOrDefault(id, -1)
+            if (indexInPlaylist != -1) {
+                "--> Removing $indexInPlaylist from playlist".e
+                controller.removeMediaItem(indexInPlaylist)
+            } else {
+
+                "--> Adding $path to playlist with ID: $id".e
+                val app = getApplication<App>()
+                val imageUri = Uri.Builder()
+                    .scheme(ContentResolver.SCHEME_ANDROID_RESOURCE)
+                    .authority(app.resources.getResourcePackageName(item.imageId))
+                    .appendPath(app.resources.getResourceTypeName(item.imageId))
+                    .appendPath(app.resources.getResourceEntryName(item.imageId))
+                    .build()
+
+                add(path, id, item.title, item.subtitle, imageUri)
+            }
         }
 
         updatePlaylist()
     }
 
+    private fun add(
+        uri: String,
+        mediaId: Int,
+        displayTitle: String,
+        albumArtist: String,
+        artworkUri: Uri,
+    ) {
+        ("--> Adding media: $uri\n" +
+                "$mediaId\n" +
+                "$displayTitle\n" +
+                "$albumArtist\n" +
+                "$artworkUri").e
+        val item = MediaItem.Builder()
+            .setMediaId(mediaId.toString())
+            .setMediaMetadata(
+                androidx.media3.common.MediaMetadata.Builder()
+                    .setDisplayTitle(displayTitle)
+                    .setAlbumArtist(albumArtist)
+                    .setArtworkUri(if (uri.hasEmbeddedPicture) null else artworkUri)
+                    .build()
+            )
+            .setUri(uri)
+            .build()
+
+        controller.addMediaItem(item)
+    }
+
     fun seekToDefaultPosition(index: Int) {
-        player.setAutoPlay(true)
-        player.seekToDefaultPosition(index)
-        player.play(true)
+        controller.playWhenReady = true
+        controller.seekToDefaultPosition(index)
+        controller.play()
+    }
+
+    fun refreshData() {
+        viewModelScope.launch(Dispatchers.IO) {
+            // Loading media to memory
+            repo.read(getApplication())
+
+            // Updating Media panel
+            viewModelScope.launch(Dispatchers.Main) {
+                mediaList.value = repo.dataList
+            }
+        }
     }
 }
+
+
+private fun MediaFormat.getIntegerSafe(key: String): Int =
+    try {
+        getInteger(key)
+    } catch (ex: Exception) {
+        -1
+    }
+
+private fun MediaFormat.getStringSafe(key: String): String =
+    try {
+        getString(key) ?: "-"
+    } catch (ex: Exception) {
+        "-"
+    }

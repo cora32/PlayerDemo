@@ -10,31 +10,12 @@ import io.iskopasi.player_test.repo.JsonApi
 import io.iskopasi.player_test.repo.getJSoupDocument
 import io.iskopasi.player_test.room.CachedTextDao
 import io.iskopasi.player_test.room.CachedTextEntity
+import io.iskopasi.player_test.room.MediaDao
+import io.iskopasi.player_test.utils.LoopIterator
 import io.iskopasi.player_test.utils.Utils.bg
 import io.iskopasi.player_test.utils.Utils.e
 import javax.inject.Inject
 import javax.inject.Singleton
-
-data class MediaFile(
-    val id: Int = -1,
-    val albumId: Int = -1,
-    val path: String = "",
-    val name: String = "",
-    val album: String = "",
-    val artist: String = "",
-    val duration: Long = 0L,
-    var genre: String = "",
-    var composer: String = "",
-    var author: String = "",
-    var title: String = "",
-    var writer: String = "",
-    var albumArtist: String = "",
-    var compilation: String = "",
-) {
-    override fun toString(): String {
-        return "$id $albumId $path $name $album $artist $duration"
-    }
-}
 
 enum class LyricsStates(var text: String? = null) {
     LYR_OK,
@@ -46,9 +27,14 @@ enum class LyricsStates(var text: String? = null) {
 @Singleton
 class Repo @Inject constructor(
     private val jsonApi: JsonApi,
-    private val dao: CachedTextDao,
+    private val dao: MediaDao,
+    private val cachedDao: CachedTextDao,
 ) {
+    lateinit var iter: LoopIterator<MediaData>
+    var idToIndex: Map<Int, Int> = mutableMapOf<Int, Int>()
     val currentData by lazy { MutableLiveData(MediaData.empty) }
+    val dataList
+        get() = iter.dataList
 
     private val projectionGeneral = arrayOf(
         MediaStore.Audio.Albums._ID,
@@ -82,10 +68,21 @@ class Repo @Inject constructor(
         MediaStore.Audio.Media.GENRE,
     )
 
-    fun read(context: Context): List<MediaFile> {
+    private val images = listOf(
+        R.drawable.none,
+        R.drawable.i2,
+        R.drawable.i3,
+        R.drawable.i4,
+        R.drawable.i5,
+        R.drawable.i6,
+        R.drawable.i7,
+        R.drawable.i10,
+    )
+
+    fun read(context: Context): List<MediaData> {
         "--> Reading... ${Thread.currentThread().name}".e
 
-        val files = mutableListOf<MediaFile>()
+        val dataList = mutableListOf<MediaData>()
 
         context.contentResolver.query(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -130,29 +127,30 @@ class Repo @Inject constructor(
                     val albumArtist: String? = it.getString(albumArtistCol)
                     val compilation: String? = it.getString(compilationCol)
 
-                    val mFile = MediaFile(
-                        id++,
-                        albumId,
-                        path,
-                        name,
-                        album,
-                        artist,
-                        duration,
-                        genre ?: "",
-                        composer ?: "",
-                        author ?: "",
-                        title ?: "",
-                        writer ?: "",
-                        albumArtist ?: "",
-                        compilation ?: "",
-                    )
-
                     val text = "for_test"
                     val text2 = "Beach"
                     if (path.contains(text) || name.contains(text) || album.contains(text)
                         || path.contains(text2) || name.contains(text2) || album.contains(text2)
                     ) {
-                        files.add(mFile)
+                        val file = MediaData(
+                            id,
+                            images.random(),
+                            name,
+                            artist,
+                            duration.toInt(),
+                            false,
+                            path,
+                            genre = genre ?: "",
+                            composer = composer ?: "",
+                            author = author ?: "",
+                            title = title ?: "",
+                            writer = writer ?: "",
+                            albumArtist = albumArtist ?: "",
+                            compilation = compilation ?: "",
+                        )
+                        dataList.add(file)
+
+                        id++
 //                    "->> file: $mFile".e
                     }
                 }
@@ -161,13 +159,24 @@ class Repo @Inject constructor(
             }
         }
 
-        return files
+        dataList.sortBy { it.title }
+
+        // Updating favorite variable
+        val ids = dataList.map { it.id }
+        idToIndex = dataList.mapIndexed { index, item -> item.id to index }.toMap()
+        for (item in dao.getIsFavourite(ids)) {
+            dataList[idToIndex[item.mediaId]!!].isFavorite = item.isFavorite
+        }
+
+        iter = LoopIterator(dataList)
+
+        return dataList
     }
 
     suspend fun getLyrics(name: String): LyricsStates {
         "[LYRICS] Trying to get lyrics for track: $name".e
 
-        val cachedLyrics = dao.getLyrics(name)?.text
+        val cachedLyrics = cachedDao.getLyrics(name)?.text
         return if (cachedLyrics != null)
             LyricsStates.LYR_OK.apply {
                 text = cachedLyrics
@@ -179,6 +188,8 @@ class Repo @Inject constructor(
     private suspend fun getLyricsFromInet(name: String): LyricsStates {
         jsonApi.getTracks(name)?.let { data ->
             "[LYRICS] Search request [OK]".e
+
+            if (data.tracks.isEmpty()) return LyricsStates.LYR_NOT_FOUND
 
             data.tracks.first().slug?.let { slug ->
                 "[LYRICS] Slug: $slug".e
@@ -219,6 +230,6 @@ class Repo @Inject constructor(
     fun cacheText(name: String, lyricsText: String) = bg {
         "--> Caching lyrics for $name...".e
 
-        dao.cacheLyrics(CachedTextEntity(name = name, text = lyricsText))
+        cachedDao.cacheLyrics(CachedTextEntity(name = name, text = lyricsText))
     }
 }
