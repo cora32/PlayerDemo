@@ -15,7 +15,7 @@
         android:layout_gravity="center"
         android:cropToPadding="false"
         android:scaleType="centerCrop"
-        android:src="@drawable/i7"
+        tools:src="@drawable/i7"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -89,85 +89,91 @@
             android:scaleType="centerCrop" />
     </io.iskopasi.player_test.views.AnimatedBorderFrameView>
 
-    <TextView
-        android:id="@+id/tv"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="32dp"
-        android:ellipsize="end"
-        android:fontFamily="@font/athiti_medium"
-        android:gravity="center_horizontal"
-        android:maxLines="1"
-        android:textColor="@color/text_color_1"
-        android:textSize="32sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/image_f"
-        tools:text="Some Title" />
-
-    <TextView
-        android:id="@+id/tv2"
-        android:layout_width="0dp"
-        android:layout_height="30dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        android:ellipsize="marquee"
-        android:fontFamily="@font/arima_madurai_thin"
-        android:gravity="center_horizontal"
-        android:maxLines="2"
-        android:textColor="@color/text_color_1"
-        android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv"
-        tools:text="some subtitle" />
-
-    <TextView
-        android:id="@+id/genre_tv"
-        android:layout_width="0dp"
-        android:layout_height="30dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        android:ellipsize="marquee"
-        android:fontFamily="@font/arima_madurai_thin"
-        android:gravity="center_horizontal"
-        android:maxLines="2"
-        android:textColor="@color/text_color_1"
-        android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv2"
-        tools:text="some genre" />
-
     <ScrollView
         android:id="@+id/scroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="62dp"
         app:layout_constraintBottom_toBottomOf="@+id/constraintLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/genre_tv">
+        app:layout_constraintTop_toBottomOf="@+id/curvedBg">
 
-        <TextView
-            android:id="@+id/text"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
-            android:ellipsize="none"
-            android:fontFamily="@font/saira_extralight"
-            android:gravity="start"
-            android:textColor="@color/text_color_1"
-            android:textSize="18sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tv2" />
+            android:orientation="vertical">
+
+
+            <TextView
+                android:id="@+id/tv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="32dp"
+                android:layout_marginEnd="32dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/athiti_medium"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:textColor="@color/text_color_1"
+                android:textSize="32sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/image_f"
+                tools:text="Some Title" />
+
+            <TextView
+                android:id="@+id/tv2"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginStart="32dp"
+                android:layout_marginEnd="32dp"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/arima_madurai_thin"
+                android:gravity="center_horizontal"
+                android:maxLines="2"
+                android:textColor="@color/text_color_1"
+                android:textSize="18sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv"
+                tools:text="some subtitle" />
+
+            <TextView
+                android:id="@+id/genre_tv"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginStart="32dp"
+                android:layout_marginEnd="32dp"
+                android:ellipsize="marquee"
+                android:fontFamily="@font/arima_madurai_thin"
+                android:gravity="center_horizontal"
+                android:maxLines="2"
+                android:textColor="@color/text_color_1"
+                android:textSize="18sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv2"
+                tools:text="some genre" />
+
+            <TextView
+                android:id="@+id/text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="32dp"
+                android:layout_marginEnd="32dp"
+                android:ellipsize="none"
+                android:fontFamily="@font/saira_extralight"
+                android:gravity="start"
+                android:textColor="@color/text_color_1"
+                android:textSize="18sp"
+                tools:text="Some long text\nSome long text\nSome long text\n" />
+
+        </LinearLayout>
 
     </ScrollView>
 
@@ -198,6 +204,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/genre_tv"
+        app:layout_constraintTop_toBottomOf="@+id/curvedBg"
         app:layout_constraintVertical_chainStyle="packed" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -61,11 +61,13 @@ class SlidingContainer @JvmOverloads constructor(
     var menuOnInfo: ((Int) -> Unit)? = null
     var menuOnShare: ((Int) -> Unit)? = null
 
-    private var isFlinging = false
+    private var isFlinging = false // Occurred on on action_up
     private var oldRootX = 0f
     private var oldRootY = 0f
     private var startX = 0f
     private var startY = 0f
+    private var currentX = 0f
+    private var currentY = 0f
     private var parallaxDeltaX = 0f
     private var parallaxDeltaY = 0f
     private var containerWidth = 0
@@ -109,7 +111,7 @@ class SlidingContainer @JvmOverloads constructor(
             isAnimatingToAnotherScreen = false
             isFlinging = false
 
-            setActualScreenData()
+            snapAfterAnimationComplete()
         }
 
         override fun onAnimationCancel(animation: Animator) {
@@ -178,7 +180,7 @@ class SlidingContainer @JvmOverloads constructor(
                         } else {
                             if (e2.y - e1!!.y > frameHeight / 2f) {
                                 goUp()
-                            } else if (e1!!.y - e2!!.y > frameHeight / 2f) {
+                            } else if (e1.y - e2.y > frameHeight / 2f) {
                                 goDown()
                             }
                         }
@@ -231,6 +233,8 @@ class SlidingContainer @JvmOverloads constructor(
     }
     private var isActionDown = false
     private var isInitialized = false
+    private var xBorder = 0f
+    private var yBorder = 0f
 
     init {
         isClickable = true
@@ -332,6 +336,9 @@ class SlidingContainer @JvmOverloads constructor(
             }
         }
 
+        xBorder = (containerWidth - frameWidth) / 2f
+        yBorder = (containerHeight - frameHeight) / 2f
+
         isInitialized = true
     }
 
@@ -370,6 +377,8 @@ class SlidingContainer @JvmOverloads constructor(
         "--> Resetting indexes from $xScreenIndex $yScreenIndex to ${prevState.xOffset + 1} ${prevState.yOffset + 1}".e
         xScreenIndex = prevState.xOffset + 1
         yScreenIndex = prevState.yOffset + 1
+
+        snapAfterAnimationComplete()
     }
 
     private fun processTouchEvent(event: MotionEvent) {
@@ -419,6 +428,8 @@ class SlidingContainer @JvmOverloads constructor(
                         goDown()
                     }
                 }
+
+                // Updates position indexes
                 prevState = currentState
                 currentState = positionMap[yScreenIndex][xScreenIndex]
 
@@ -455,6 +466,8 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun toggleArrows() {
+        if (!isInitialized) return
+
         when (currentState) {
             SlidingScreenPosition.CENTER -> {
                 if (canGoLeft()) leftArrow?.show()
@@ -552,6 +565,9 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun goUp() {
+        // Finds suitable panel
+//        snap()
+
         if (yScreenIndex > 0) {
             if (canGoUp()) {
                 yScreenIndex--
@@ -560,6 +576,9 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun goDown() {
+        // Finds suitable panel
+//        snap()
+
         if (yScreenIndex < 2) {
             if (canGoDown()) {
                 yScreenIndex++
@@ -568,6 +587,9 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun goRight() {
+        // Finds suitable panel
+//        snap()
+
         if (xScreenIndex < 2) {
             if (canGoRight()) {
                 xScreenIndex++
@@ -576,6 +598,9 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun goLeft() {
+        // Finds suitable panel
+//        snap()
+
         if (xScreenIndex > 0) {
             if (canGoLeft()) {
                 xScreenIndex--
@@ -584,9 +609,9 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     private fun getXValue(): Float {
-        val destinationX = if (currentState.xOffset > prevState.xOffset) {
+        val destinationX = if (currentState.xOffset > prevState.xOffset) { // If moving left
             -frameWidth.toFloat()
-        } else if (currentState.xOffset < prevState.xOffset) {
+        } else if (currentState.xOffset < prevState.xOffset) { // If moving right
             frameWidth.toFloat()
         } else 0f
 
@@ -618,8 +643,18 @@ class SlidingContainer @JvmOverloads constructor(
 
         val xValue = getXValue()
         val xAdjustment = xValue.getXAdjustment(savedGlobalDeltaX)
+        var finalDelta = xValue + xAdjustment
 
-        return ValueAnimator.ofFloat(0f, xValue + xAdjustment)
+        val finalX = currentX + finalDelta
+        val isOutOfBoundsX = finalX < -xBorder || finalX > xBorder
+
+        // If attempts to move out of screen, fix delta so it wouldn't
+        if (isOutOfBoundsX) {
+            val howFar = finalX - frameWidth
+            finalDelta = howFar.getXAdjustment(savedGlobalDeltaX)
+        }
+
+        return ValueAnimator.ofFloat(0f, finalDelta)
             .apply {
                 interpolator = DecelerateInterpolator()
                 addUpdateListener { anim ->
@@ -634,8 +669,18 @@ class SlidingContainer @JvmOverloads constructor(
 
         val yValue = getYValue()
         val yAdjustment = yValue.getYAdjustment(savedGlobalDeltaY)
+        var finalDelta = yValue + yAdjustment
 
-        return ValueAnimator.ofFloat(0f, yValue + yAdjustment)
+        val finalY = currentY + finalDelta
+        val isOutOfBoundsY = finalY < -yBorder || finalY > yBorder
+
+        // If attempts to move out of screen, fix delta so it wouldn't
+        if (isOutOfBoundsY) {
+            val howFar = finalY - frameHeight
+            finalDelta = howFar.getYAdjustment(savedGlobalDeltaY)
+        }
+
+        return ValueAnimator.ofFloat(0f, finalDelta)
             .apply {
                 interpolator = DecelerateInterpolator()
                 addUpdateListener { anim ->
@@ -663,7 +708,7 @@ class SlidingContainer @JvmOverloads constructor(
             view.x = startXCoordMap[view]!! + deltaX - parallaxDeltaX
         }
 
-        val currentX = frameWidth - centerScreenInitialX + deltaX
+        currentX = frameWidth - centerScreenInitialX + deltaX
         val fraction = currentX / frameWidth
 
         // Moving arrows on x-axis
@@ -685,7 +730,7 @@ class SlidingContainer @JvmOverloads constructor(
             view.y = startYCoordMap[view]!! + deltaY - parallaxDeltaY
         }
 
-        val currentY = frameHeight - centerScreenInitialY + deltaY
+        currentY = frameHeight - centerScreenInitialY + deltaY
         val fraction = currentY / frameHeight
 
         // Moving arrows on y-axis
@@ -708,7 +753,7 @@ class SlidingContainer @JvmOverloads constructor(
         containerWidth = frameWidth * xFactor
         containerHeight = frameHeight * yFactor
 
-        "--> xFactor: $xFactor; yFactor: $yFactor;  container width: ${frameWidth * xFactor}; height: ${frameHeight * yFactor}".e
+        "--> xFactor: $xFactor; yFactor: $yFactor;  container width: $containerWidth; height: $containerHeight".e
         layoutParams = LayoutParams(frameWidth * xFactor, frameHeight * yFactor)
     }
 
@@ -904,7 +949,7 @@ class SlidingContainer @JvmOverloads constructor(
                 && !isAnimatingToAnotherScreen
     }
 
-    fun setActualScreenData() {
+    fun snapAfterAnimationComplete() {
         if (isAnimatingToAnotherScreen) return
 
         viewMap[SlidingScreenPosition.CENTER.name]?.let { centerView ->
@@ -933,7 +978,7 @@ class SlidingContainer @JvmOverloads constructor(
                 currentState = positionMap[yScreenIndex][xScreenIndex]
                 prevState = currentState
 
-                "setActualScreenData: $xScreenIndex $yScreenIndex".e
+                "snapAfterAnimationComplete: $xScreenIndex $yScreenIndex".e
             }
         }
     }

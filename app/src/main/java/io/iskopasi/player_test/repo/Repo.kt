@@ -76,6 +76,8 @@ class Repo @Inject constructor(
         R.drawable.i5,
         R.drawable.i6,
         R.drawable.i7,
+        R.drawable.i8,
+        R.drawable.i9,
         R.drawable.i10,
     )
 
@@ -134,7 +136,7 @@ class Repo @Inject constructor(
                     ) {
                         val file = MediaData(
                             id,
-                            images.random(),
+                            images[id % 10],
                             name,
                             artist,
                             duration.toInt(),

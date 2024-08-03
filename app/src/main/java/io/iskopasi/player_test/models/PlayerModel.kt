@@ -104,7 +104,6 @@ class PlayerModel @Inject constructor(
     val currentData: MutableLiveData<MediaData>
         get() = repo.currentData
 
-    private var previousData: MediaData? = null
     var playlist = MutableLiveData(listOf<MediaData>())
     var isPlaying = MutableLiveData(false)
     var isShuffling = MutableLiveData(false)
@@ -190,7 +189,6 @@ class PlayerModel @Inject constructor(
             refreshData()
 
             controller = controllerFuture.get()
-            "controller connected: $controller".e
             controller.addListener(listener)
 
             restoreCurrentUI()
@@ -205,10 +203,23 @@ class PlayerModel @Inject constructor(
 
             addToPlaylist(index = mediaIndex, id = mediaId, invokeController = false)
         }
+
+        isPlaying.value = controller.isPlaying
+        isShuffling.value = controller.shuffleModeEnabled
+        isRepeating.value = controller.repeatMode != Player.REPEAT_MODE_OFF
+        isPlaying.value = controller.isPlaying
+
+        onMediaSet(controller.currentMediaItemIndex)
+
+        onPlayStatusChanged(controller.isPlaying)
     }
 
     private fun onSpectrumReady(chartData: FloatArray, maxRawAmplitude: Float) {
         fifoBitmap?.add(chartData, maxRawAmplitude)
+    }
+
+    private fun onFullSpectrumReady(bitmap: Bitmap) = ui {
+        spectrumChartData.value = FFTChartData(bitmap = bitmap)
     }
 
     private fun onFlush(sampleRateHz: Int, channelCount: Int, encoding: String) {
@@ -219,25 +230,12 @@ class PlayerModel @Inject constructor(
         }
     }
 
-    private fun onMediaSet(index: Int) {
-        setMedia(index)
-    }
-
     private fun onPlayStatusChanged(isPlaying: Boolean) {
         setPlayStatus(isPlaying)
     }
 
     private fun onPlaylistFinished() {
 //        pause()
-    }
-
-    private fun onFullSpectrumReady(bitmap: Bitmap) {
-        ui {
-            spectrumChartData.value =
-                FFTChartData(
-                    bitmap = bitmap
-                )
-        }
     }
 
     private fun startRequestingSeekerPositions() = ui {
@@ -264,15 +262,21 @@ class PlayerModel @Inject constructor(
             return
         }
 
-        previousData = currentData.value
+        "----> setStates: ${data.id} ${data.title} ${data.subtitle}".e
         currentData.value = data
-        currentActiveIndex.value = playlistIndex
 
-        "--> currentActiveMediaIndex: ${data.path} ${data.id} ${repo.idToIndex.keys}".e
-        currentActiveMediaIndex.value = repo.idToIndex[currentData.value!!.id]
+        setCurrentActiveIndexes(data, playlistIndex)
 
         isFavorite.value = repo.iter.value?.isFavorite
         currentProgress.value = 0
+    }
+
+    private fun setCurrentActiveIndexes(data: MediaData, playlistIndex: Int) {
+        "--> active playlistIndex: $playlistIndex".e
+        currentActiveIndex.value = playlistIndex
+
+        "--> active mediaIndex: ${data.path} ${data.id} ${repo.idToIndex.keys} ${repo.idToIndex.values}".e
+        currentActiveMediaIndex.value = repo.idToIndex[data.id]
     }
 
     private fun resetUi() {
@@ -282,7 +286,7 @@ class PlayerModel @Inject constructor(
         currentProgress.value = 0
     }
 
-    private fun setMedia(index: Int) {
+    private fun onMediaSet(index: Int) {
         if (playlist.value?.isEmpty() == true || playlist.value == null) {
             resetUi()
         } else {
@@ -292,10 +296,17 @@ class PlayerModel @Inject constructor(
 
     fun prev() {
         controller.seekToPreviousMediaItem()
+
+        val asd = controller.getMediaItemAt(controller.currentMediaItemIndex)
+
+        "----> asd: ${asd.mediaId} ${asd.mediaMetadata.title} ${asd.mediaMetadata.subtitle}".e
     }
 
     fun next() {
         controller.seekToNextMediaItem()
+
+        val asd = controller.getMediaItemAt(controller.currentMediaItemIndex)
+        "----> asd: ${asd.mediaId} ${asd.mediaMetadata.title} ${asd.mediaMetadata.subtitle}".e
     }
 
     fun setSeekPosition(progress: Long) {
@@ -474,11 +485,9 @@ class PlayerModel @Inject constructor(
             if (isActive == true) {
                 "--> Deactivating $index in Media".e
                 remove(index)
-//                idToListIndexMap.remove(id)
             } else {
                 "--> Highlighting $index in Media; id = $id".e
                 put(index, true)
-//                idToListIndexMap[id] = index
             }
         }
 
@@ -489,7 +498,6 @@ class PlayerModel @Inject constructor(
                 "--> Removing $indexInPlaylist from playlist".e
                 controller.removeMediaItem(indexInPlaylist)
             } else {
-
                 "--> Adding $path to playlist with ID: $id".e
                 val app = getApplication<App>()
                 val imageUri = Uri.Builder()

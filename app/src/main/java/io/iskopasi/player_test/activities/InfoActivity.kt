@@ -20,7 +20,6 @@ import io.iskopasi.player_test.R
 import io.iskopasi.player_test.databinding.FragmentInfoBinding
 import io.iskopasi.player_test.models.InfoViewModel
 import io.iskopasi.player_test.models.MediaData
-import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.getAccent
 import io.iskopasi.player_test.utils.toBitmap
 import jp.wasabeef.glide.transformations.BlurTransformation
@@ -50,8 +49,6 @@ class InfoActivity : AppCompatActivity() {
         binding = FragmentInfoBinding.inflate(layoutInflater)
 
         val mediaId = intent.getIntExtra("mediaId", -1)
-
-        "--> Recevied index: $mediaId".e
 
         setup(mediaId)
 
