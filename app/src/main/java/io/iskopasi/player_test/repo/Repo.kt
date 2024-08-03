@@ -5,6 +5,7 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.MutableLiveData
+import io.iskopasi.player_test.adapters.RecommendItemData
 import io.iskopasi.player_test.models.MediaData
 import io.iskopasi.player_test.repo.JsonApi
 import io.iskopasi.player_test.repo.getJSoupDocument
@@ -14,6 +15,7 @@ import io.iskopasi.player_test.room.MediaDao
 import io.iskopasi.player_test.utils.LoopIterator
 import io.iskopasi.player_test.utils.Utils.bg
 import io.iskopasi.player_test.utils.Utils.e
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -35,6 +37,8 @@ class Repo @Inject constructor(
     val currentData by lazy { MutableLiveData(MediaData.empty) }
     val dataList
         get() = iter.dataList
+    val recommendTracks = mutableListOf<RecommendItemData>()
+    val recommendAlbums = mutableListOf<RecommendItemData>()
 
     private val projectionGeneral = arrayOf(
         MediaStore.Audio.Albums._ID,
@@ -80,6 +84,13 @@ class Repo @Inject constructor(
         R.drawable.i9,
         R.drawable.i10,
     )
+
+    private val textForRecommendations =
+        "warning: Unable to read Kotlin metadata due to unsupported metadata kind null".split(" ")
+    private val text2ForRecommendations =
+        "generateDebugAssets packageDebugResources parseDebugLocalResources checkDebugAarMetadata mapDebugSourceSetPaths mergeDebugAssets mergeDebugResources dataBindingMergeDependencyArtifactsDebug compressDebugAssets checkDebugDuplicateClasses mergeLibDexDebug configureCMakeDebug[arm64-v8a] processDebugMainManifest processDebugManifest processDebugManifestForPackage dataBindingGenBaseClassesDebug mergeExtDexDebug processDebugResources buildCMakeDebug[arm64-v8a] mergeDebugNativeLibs stripDebugDebugSymbols kspDebugKotlin kaptGenerateStubsDebugKotlin kaptDebugKotlin compileDebugKotlin compileDebugJavaWithJavac hiltAggregateDepsDebug hiltJavaCompileDebug processDebugJavaRes transformDebugClassesWithAsm mergeDebugJavaResource dexBuilderDebug mergeProjectDexDebug packageDebug assembleDebug createDebugApkListingFileRedirect UP-TO-DATE Task".split(
+            " "
+        )
 
     fun read(context: Context): List<MediaData> {
         "--> Reading... ${Thread.currentThread().name}".e
@@ -172,7 +183,23 @@ class Repo @Inject constructor(
 
         iter = LoopIterator(dataList)
 
+        generateRecommendations()
+
         return dataList
+    }
+
+    private fun generateRecommendations() {
+        repeat(10) {
+            val text1 =
+                "${textForRecommendations.random().capital()} ${textForRecommendations.random()}"
+            val text2 =
+                "${textForRecommendations.random().capital()} ${text2ForRecommendations.random()}"
+            val text3 =
+                "${text2ForRecommendations.random().capital()} ${text2ForRecommendations.random()}"
+
+            recommendTracks.add(RecommendItemData(text1, "", images.random()))
+            recommendAlbums.add(RecommendItemData(text2, text3, images.random()))
+        }
     }
 
     suspend fun getLyrics(name: String): LyricsStates {
@@ -235,3 +262,6 @@ class Repo @Inject constructor(
         cachedDao.cacheLyrics(CachedTextEntity(name = name, text = lyricsText))
     }
 }
+
+private fun String.capital(): String =
+    replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString() }

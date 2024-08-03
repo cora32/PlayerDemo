@@ -46,6 +46,7 @@ data class SlidingScreen<T : ViewBinding>(
     val id: Int,
     val position: SlidingScreenPosition,
     val bindingInflater: (LayoutInflater, ViewGroup?, Boolean) -> T,
+    val onVisible: (() -> Unit)? = null
 )
 
 
@@ -75,6 +76,7 @@ class SlidingContainer @JvmOverloads constructor(
     private var currentState: SlidingScreenPosition = SlidingScreenPosition.CENTER
     private var prevState: SlidingScreenPosition = SlidingScreenPosition.CENTER
     private val viewMap = mutableMapOf<String, View>()
+    private val onVisibleCallbacks = mutableMapOf<String, () -> Unit>()
     private val velocityThreshold = 2000
     val bindingMap = mutableMapOf<KClass<*>, ViewBinding>()
     private val metrics by lazy {
@@ -86,7 +88,7 @@ class SlidingContainer @JvmOverloads constructor(
     private val startXCoordMap = mutableMapOf<View, Float>()
     private val startYCoordMap = mutableMapOf<View, Float>()
     private var deltaThreshold = 120f
-    private var tempDeltaX = 0f
+    var tempDeltaX = 0f
     var tempDeltaY = 0f
     private var globalDeltaX = 0f
     private var globalDeltaY = 0f
@@ -112,6 +114,8 @@ class SlidingContainer @JvmOverloads constructor(
             isFlinging = false
 
             snapAfterAnimationComplete()
+
+            performVisibilityActions()
         }
 
         override fun onAnimationCancel(animation: Animator) {
@@ -121,6 +125,13 @@ class SlidingContainer @JvmOverloads constructor(
         override fun onAnimationRepeat(animation: Animator) {
         }
     }
+
+    private fun performVisibilityActions() {
+        val currentlyVisibleScreen = positionMap[yScreenIndex][xScreenIndex].name
+        "$currentlyVisibleScreen is visible".e
+        onVisibleCallbacks[currentlyVisibleScreen]?.invoke()
+    }
+
     private val gestureDetector by lazy {
         GestureDetector(context.applicationContext,
             object : GestureDetector.OnGestureListener {
@@ -268,7 +279,15 @@ class SlidingContainer @JvmOverloads constructor(
             // Hiding screen until their parameters are set
             view.visibility = View.INVISIBLE
 
+            // Saving view
             viewMap[screen.position.name] = view
+
+            // Saving callbacks to be called when corresponding view is visible
+            if (screen.onVisible != null) {
+                onVisibleCallbacks[screen.position.name] = screen.onVisible
+            }
+
+            // Saving bindings
             bindingMap[binding::class] = binding
 
             view.post {

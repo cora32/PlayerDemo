@@ -17,12 +17,17 @@ import io.iskopasi.player_test.databinding.FragmentLeftBinding
 import io.iskopasi.player_test.databinding.FragmentMainBinding
 import io.iskopasi.player_test.databinding.FragmentRightBinding
 import io.iskopasi.player_test.databinding.FragmentScreenMainBinding
+import io.iskopasi.player_test.databinding.FragmentTopBinding
 import io.iskopasi.player_test.databinding.LoaderBinding
 import io.iskopasi.player_test.databinding.TopScreenBinding
 import io.iskopasi.player_test.models.PlayerModel
+import io.iskopasi.player_test.models.RecommendationsModel
+import io.iskopasi.player_test.utils.Utils.e
+import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.views.SlidingScreen
 import io.iskopasi.player_test.views.SlidingScreenPosition
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @UnstableApi
@@ -33,8 +38,10 @@ class MainFragment : Fragment() {
     private val rightBinding by lazy { binding.container.getBinding<FragmentRightBinding>() }
     private val leftBinding by lazy { binding.container.getBinding<FragmentLeftBinding>() }
     private val bottomBinding by lazy { binding.container.getBinding<FragmentBottomBinding>() }
+    private val topBinding by lazy { binding.container.getBinding<FragmentTopBinding>() }
     private lateinit var loaderBinding: LoaderBinding
     private val model: PlayerModel by viewModels()
+    private val recModel: RecommendationsModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,6 +94,18 @@ class MainFragment : Fragment() {
                     SlidingScreenPosition.BOTTOM,
                     FragmentBottomBinding::inflate
                 ),
+                SlidingScreen(
+                    R.layout.fragment_top,
+                    SlidingScreenPosition.TOP,
+                    FragmentTopBinding::inflate,
+                    onVisible = {
+                        ui {
+                            "Updating recommendations...".e
+                            delay(500L)
+                            recModel.show()
+                        }
+                    }
+                ),
             )
         )
 
@@ -101,6 +120,7 @@ class MainFragment : Fragment() {
             setupLeft(model, leftBinding, binding)
             setupBottom(model, bottomBinding, binding)
             setupCenter(model, centerBinding, binding)
+            setupTop(recModel, topBinding, binding)
         }
     }
 
