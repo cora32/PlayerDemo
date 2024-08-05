@@ -261,6 +261,8 @@ class Repo @Inject constructor(
 
         cachedDao.cacheLyrics(CachedTextEntity(name = name, text = lyricsText))
     }
+
+    fun getItemByIndex(id: Int): MediaData = iter.dataList[idToIndex[id]!!]
 }
 
 private fun String.capital(): String =

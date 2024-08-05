@@ -22,7 +22,6 @@ import io.iskopasi.player_test.databinding.LoaderBinding
 import io.iskopasi.player_test.databinding.TopScreenBinding
 import io.iskopasi.player_test.models.PlayerModel
 import io.iskopasi.player_test.models.RecommendationsModel
-import io.iskopasi.player_test.utils.Utils.e
 import io.iskopasi.player_test.utils.Utils.ui
 import io.iskopasi.player_test.views.SlidingScreen
 import io.iskopasi.player_test.views.SlidingScreenPosition
@@ -100,8 +99,7 @@ class MainFragment : Fragment() {
                     FragmentTopBinding::inflate,
                     onVisible = {
                         ui {
-                            "Updating recommendations...".e
-                            delay(500L)
+                            delay(300L)
                             recModel.show()
                         }
                     }

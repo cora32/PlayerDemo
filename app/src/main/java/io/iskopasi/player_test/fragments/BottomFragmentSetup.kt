@@ -35,7 +35,7 @@ fun MainFragment.setupBottom(
             model.showInfo(this, id)
         }
         rootBinding.container.menuOnShare = {
-            model.share(requireContext().applicationContext, index)
+            model.share(requireContext().applicationContext, id)
         }
     }
 

@@ -424,10 +424,16 @@ class PlayerModel @Inject constructor(
         }
     }
 
-    fun share(context: Context, index: Int) {
-        val name = currentData.value!!.name
-        val subtitle = currentData.value!!.subtitle
-        File("").share(context, name, subtitle)
+    fun share(context: Context, id: Int) {
+        if (id == -1) return
+
+        val item = repo.getItemByIndex(id)
+        val name = item.title
+        val subtitle = item.subtitle
+
+        "--> Sharing ${item.path}".e
+
+        File(item.path).share(context, name, subtitle)
     }
 
     fun showInfo(fragment: MainFragment, mediaId: Int) {

@@ -311,7 +311,7 @@ fun MainFragment.setupCenter(
     binding.btnShare.setOnClickListener {
         "isEmpty: $isEmpty".e
         if (isEmpty) rootBinding.container.goToRight() else
-            model.share(requireContext().applicationContext, 0)
+            model.share(requireContext().applicationContext, model.currentData.value!!.id)
     }
 
 //        ui {
