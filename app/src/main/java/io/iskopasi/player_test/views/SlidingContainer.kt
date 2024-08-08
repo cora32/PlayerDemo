@@ -43,9 +43,13 @@ enum class SlidingScreenPosition(val xOffset: Int, val yOffset: Int) {
 }
 
 data class SlidingScreen<T : ViewBinding>(
-    val id: Int,
     val position: SlidingScreenPosition,
     val bindingInflater: (LayoutInflater, ViewGroup?, Boolean) -> T,
+    val onVisible: (() -> Unit)? = null
+)
+
+data class SlidingScreen2(
+    val position: SlidingScreenPosition,
     val onVisible: (() -> Unit)? = null
 )
 
@@ -62,6 +66,8 @@ class SlidingContainer @JvmOverloads constructor(
     var menuOnInfo: ((Int) -> Unit)? = null
     var menuOnShare: ((Int) -> Unit)? = null
 
+
+    private val listOfScreens = mutableListOf<SlidingScreen<ViewBinding>>()
     private var isFlinging = false // Occurred on on action_up
     private var oldRootX = 0f
     private var oldRootY = 0f
@@ -264,15 +270,14 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     fun initialize(
-        loaderBinding: LoaderBinding? = null,
-        screens: List<SlidingScreen<ViewBinding>>,
+        loaderBinding: LoaderBinding? = null
     ) {
         showLoader(loaderBinding)
 
         isInitialized = false
         val inflater = LayoutInflater.from(context)
 
-        for (screen in screens) {
+        for (screen in listOfScreens) {
             val binding = screen.bindingInflater(inflater, this, true)
             val view = binding.root
 
@@ -1036,4 +1041,12 @@ class SlidingContainer @JvmOverloads constructor(
     }
 
     fun isIsCenter(): Boolean = currentState == SlidingScreenPosition.CENTER
+
+    fun addScreen(
+        position: SlidingScreenPosition,
+        bindingInflater: (LayoutInflater, ViewGroup?, Boolean) -> ViewBinding,
+        onVisible: (() -> Unit)? = null
+    ) {
+        listOfScreens.add(SlidingScreen(position, bindingInflater, onVisible))
+    }
 }

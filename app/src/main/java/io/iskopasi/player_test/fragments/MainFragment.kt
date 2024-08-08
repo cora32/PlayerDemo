@@ -10,8 +10,8 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
+import androidx.viewbinding.ViewBinding
 import dagger.hilt.android.AndroidEntryPoint
-import io.iskopasi.player_test.R
 import io.iskopasi.player_test.databinding.FragmentBottomBinding
 import io.iskopasi.player_test.databinding.FragmentLeftBinding
 import io.iskopasi.player_test.databinding.FragmentMainBinding
@@ -19,15 +19,21 @@ import io.iskopasi.player_test.databinding.FragmentRightBinding
 import io.iskopasi.player_test.databinding.FragmentScreenMainBinding
 import io.iskopasi.player_test.databinding.FragmentTopBinding
 import io.iskopasi.player_test.databinding.LoaderBinding
-import io.iskopasi.player_test.databinding.TopScreenBinding
 import io.iskopasi.player_test.models.PlayerModel
 import io.iskopasi.player_test.models.RecommendationsModel
 import io.iskopasi.player_test.utils.Utils.ui
-import io.iskopasi.player_test.views.SlidingScreen
 import io.iskopasi.player_test.views.SlidingScreenPosition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+data class TestData<T : ViewBinding>(val text: String)
+
+class SomeShit {
+    inline fun <reified T : ViewBinding> add() {
+
+    }
+}
 
 @UnstableApi
 @AndroidEntryPoint
@@ -62,50 +68,28 @@ class MainFragment : Fragment() {
         binding = FragmentMainBinding.inflate(inflater, container, false)
         loaderBinding = LoaderBinding.inflate(inflater, binding.root, false)
 
-        // Starting animation in loader screen
-        (loaderBinding.loaderIv.drawable as AnimatedVectorDrawable).start()
-
-        binding.container.initialize(
-            loaderBinding = loaderBinding,
-            listOf(
-                SlidingScreen(
-                    R.layout.fragment_left,
-                    SlidingScreenPosition.LEFT,
-                    FragmentLeftBinding::inflate
-                ),
-                SlidingScreen(
-                    R.layout.fragment_screen_main,
-                    SlidingScreenPosition.CENTER,
-                    FragmentScreenMainBinding::inflate
-                ),
-                SlidingScreen(
-                    R.layout.fragment_right,
-                    SlidingScreenPosition.RIGHT,
-                    FragmentRightBinding::inflate
-                ),
-                SlidingScreen(
-                    R.layout.fragment_right,
-                    SlidingScreenPosition.TOP,
-                    TopScreenBinding::inflate
-                ),
-                SlidingScreen(
-                    R.layout.fragment_bottom,
-                    SlidingScreenPosition.BOTTOM,
-                    FragmentBottomBinding::inflate
-                ),
-                SlidingScreen(
-                    R.layout.fragment_top,
-                    SlidingScreenPosition.TOP,
-                    FragmentTopBinding::inflate,
-                    onVisible = {
-                        ui {
-                            delay(300L)
-                            recModel.show()
-                        }
+        binding.container.apply {
+            addScreen(SlidingScreenPosition.LEFT, FragmentLeftBinding::inflate)
+            addScreen(SlidingScreenPosition.CENTER, FragmentScreenMainBinding::inflate)
+            addScreen(SlidingScreenPosition.RIGHT, FragmentRightBinding::inflate)
+            addScreen(
+                SlidingScreenPosition.TOP,
+                FragmentTopBinding::inflate,
+                onVisible = {
+                    ui {
+                        delay(300L)
+                        recModel.show()
                     }
-                ),
+                })
+            addScreen(SlidingScreenPosition.BOTTOM, FragmentBottomBinding::inflate)
+
+            initialize(
+                loaderBinding = loaderBinding.apply {
+                    // Starting animation in loader screen
+                    (loaderIv.drawable as AnimatedVectorDrawable).start()
+                },
             )
-        )
+        }
 
         return binding.root
     }
