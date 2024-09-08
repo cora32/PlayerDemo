@@ -3,7 +3,6 @@ package io.iskopasi.player_test.models
 import android.app.Application
 import android.content.ComponentName
 import android.content.ContentResolver
-import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaExtractor
 import android.media.MediaFormat
@@ -424,7 +423,7 @@ class PlayerModel @Inject constructor(
         }
     }
 
-    fun share(context: Context, id: Int) {
+    fun share(id: Int) {
         if (id == -1) return
 
         val item = repo.getItemByIndex(id)
@@ -433,7 +432,7 @@ class PlayerModel @Inject constructor(
 
         "--> Sharing ${item.path}".e
 
-        File(item.path).share(context, name, subtitle)
+        File(item.path).share(getApplication(), name, subtitle)
     }
 
     fun showInfo(fragment: MainFragment, mediaId: Int) {

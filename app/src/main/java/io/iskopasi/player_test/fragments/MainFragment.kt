@@ -10,7 +10,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.UnstableApi
-import androidx.viewbinding.ViewBinding
 import dagger.hilt.android.AndroidEntryPoint
 import io.iskopasi.player_test.databinding.FragmentBottomBinding
 import io.iskopasi.player_test.databinding.FragmentLeftBinding
@@ -22,18 +21,11 @@ import io.iskopasi.player_test.databinding.LoaderBinding
 import io.iskopasi.player_test.models.PlayerModel
 import io.iskopasi.player_test.models.RecommendationsModel
 import io.iskopasi.player_test.utils.Utils.ui
+import io.iskopasi.player_test.utils.toPx
 import io.iskopasi.player_test.views.SlidingScreenPosition
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-data class TestData<T : ViewBinding>(val text: String)
-
-class SomeShit {
-    inline fun <reified T : ViewBinding> add() {
-
-    }
-}
 
 @UnstableApi
 @AndroidEntryPoint
@@ -68,6 +60,8 @@ class MainFragment : Fragment() {
         binding = FragmentMainBinding.inflate(inflater, container, false)
         loaderBinding = LoaderBinding.inflate(inflater, binding.root, false)
 
+        val topWidth = requireContext().toPx(600).toInt()
+
         binding.container.apply {
             addScreen(SlidingScreenPosition.LEFT, FragmentLeftBinding::inflate)
             addScreen(SlidingScreenPosition.CENTER, FragmentScreenMainBinding::inflate)
@@ -80,7 +74,10 @@ class MainFragment : Fragment() {
                         delay(300L)
                         recModel.show()
                     }
-                })
+                },
+                extendWidth = topWidth,
+                xOffset = -topWidth / 2
+            )
             addScreen(SlidingScreenPosition.BOTTOM, FragmentBottomBinding::inflate)
 
             initialize(

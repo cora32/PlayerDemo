@@ -45,14 +45,12 @@ enum class SlidingScreenPosition(val xOffset: Int, val yOffset: Int) {
 data class SlidingScreen<T : ViewBinding>(
     val position: SlidingScreenPosition,
     val bindingInflater: (LayoutInflater, ViewGroup?, Boolean) -> T,
-    val onVisible: (() -> Unit)? = null
+    val onVisible: (() -> Unit)? = null,
+    val extendWidth: Int = 0,
+    val extendHeight: Int = 0,
+    val xOffset: Int = 0,
+    val yOffset: Int = 0,
 )
-
-data class SlidingScreen2(
-    val position: SlidingScreenPosition,
-    val onVisible: (() -> Unit)? = null
-)
-
 
 class SlidingContainer @JvmOverloads constructor(
     context: Context,
@@ -300,11 +298,11 @@ class SlidingContainer @JvmOverloads constructor(
                 val screenX =
                     containerWidth / 2f - view.width / 2f + screen.position.xOffset * frameWidth + abs(
                         x
-                    )
+                    ) + screen.xOffset
                 val screenY =
                     containerHeight / 2f - view.height / 2f + screen.position.yOffset * frameHeight + abs(
                         y
-                    )
+                    ) + screen.yOffset
 
                 // Saving views initial coordinates to be used as starting point in transitions
                 startXCoordMap[view] = screenX
@@ -312,9 +310,13 @@ class SlidingContainer @JvmOverloads constructor(
 
                 view.x = screenX
                 view.y = screenY
-                view.layoutParams = LayoutParams(frameWidth, frameHeight)
 
-                "--> Frame: $frameWidth, $frameHeight; ${view.x}, ${view.y}".e
+                view.layoutParams = LayoutParams(
+                    frameWidth + screen.extendWidth,
+                    frameHeight + screen.extendHeight
+                )
+
+                "--> Frame ${screen.position}; x: ${view.x}, y: ${view.y}; ${frameWidth + screen.extendWidth}, ${frameHeight + screen.extendHeight}".e
 
                 // Placing navigational arrows at center after center screen got all its sizes
                 if (screen.position.name == SlidingScreenPosition.CENTER.name) {
@@ -1045,8 +1047,20 @@ class SlidingContainer @JvmOverloads constructor(
     fun addScreen(
         position: SlidingScreenPosition,
         bindingInflater: (LayoutInflater, ViewGroup?, Boolean) -> ViewBinding,
-        onVisible: (() -> Unit)? = null
+        onVisible: (() -> Unit)? = null,
+        extendWidth: Int = 0,
+        extendHeight: Int = 0,
+        xOffset: Int = 0,
+        yOffset: Int = 0,
     ) {
-        listOfScreens.add(SlidingScreen(position, bindingInflater, onVisible))
+        listOfScreens.add(
+            SlidingScreen(
+                position, bindingInflater, onVisible,
+                extendWidth = extendWidth,
+                extendHeight = extendHeight,
+                xOffset = xOffset,
+                yOffset = yOffset,
+            )
+        )
     }
 }
