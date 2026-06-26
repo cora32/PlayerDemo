@@ -1,4 +1,4 @@
-## Player demo on media3 with spectrogram and multi-directional sliding UI.
+## A Media3 demo with spectrogram and multi-directional sliding UI.
 
 Minimum required API: 24
 
